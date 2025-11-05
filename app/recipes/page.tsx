@@ -33,6 +33,7 @@ export default function RecipesPage() {
   const [filters, setFilters] = useState({
     q: '',
     cuisine: '',
+    difficulty: '',
     diet: '',
     maxTime: '',
     maxPrice: '',
@@ -80,6 +81,10 @@ export default function RecipesPage() {
 
     if (filters.cuisine) {
       filtered = filtered.filter((r) => r.cuisine === filters.cuisine);
+    }
+
+    if (filters.difficulty) {
+      filtered = filtered.filter((r) => r.difficulty === filters.difficulty);
     }
 
     if (filters.maxTime) {
@@ -142,10 +147,24 @@ export default function RecipesPage() {
                   onChange={handleFilterChange}
                   options={[
                     { value: '', label: 'All Cuisines' },
+                    { value: 'Cambodian', label: 'Cambodian' },
                     { value: 'Thai', label: 'Thai' },
                     { value: 'Vietnamese', label: 'Vietnamese' },
-                    { value: 'Malaysian', label: 'Malaysian' },
+                    { value: 'Australian', label: 'Australian' },
                     { value: 'American', label: 'American' },
+                  ]}
+                />
+
+                <Select
+                  label="Difficulty"
+                  name="difficulty"
+                  value={filters.difficulty}
+                  onChange={handleFilterChange}
+                  options={[
+                    { value: '', label: 'All Levels' },
+                    { value: 'easy', label: 'Easy' },
+                    { value: 'medium', label: 'Medium' },
+                    { value: 'hard', label: 'Hard' },
                   ]}
                 />
 
