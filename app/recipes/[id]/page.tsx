@@ -7,6 +7,7 @@ import Image from 'next/image';
 import ReactMarkdown from 'react-markdown';
 import { Button } from '@/components/Button';
 import { Card } from '@/components/Card';
+import { AddToPlannerModal } from '@/components/AddToPlannerModal';
 
 interface Ingredient {
   name: string;
@@ -48,6 +49,8 @@ export default function RecipeDetailPage() {
   const [checkedIngredients, setCheckedIngredients] = useState<{
     [key: number]: boolean;
   }>({});
+  const [plannerModalOpen, setPlannerModalOpen] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
 
   useEffect(() => {
     loadRecipe();
@@ -106,13 +109,22 @@ export default function RecipeDetailPage() {
       </nav>
 
       <div className="max-w-4xl mx-auto px-4 py-8">
-        <Button
-          variant="outline"
-          onClick={() => router.back()}
-          className="mb-6"
-        >
-          ← Back
-        </Button>
+        <div className="flex gap-4 mb-6">
+          <Button
+            variant="outline"
+            onClick={() => router.back()}
+          >
+            ← Back
+          </Button>
+          {recipe && (
+            <Button
+              onClick={() => setPlannerModalOpen(true)}
+              className="flex-1"
+            >
+              📅 Add to Planner
+            </Button>
+          )}
+        </div>
 
         <Card>
           {recipe.imageUrl && (
@@ -330,6 +342,29 @@ export default function RecipeDetailPage() {
             </div>
           )}
         </Card>
+
+        {/* Success Message */}
+        {successMessage && (
+          <div className="fixed bottom-6 right-6 bg-success text-white px-6 py-3 rounded-lg shadow-lg animate-pulse">
+            {successMessage}
+          </div>
+        )}
+
+        {/* Add to Planner Modal */}
+        {recipe && (
+          <AddToPlannerModal
+            isOpen={plannerModalOpen}
+            recipeId={recipe.id}
+            recipeName={recipe.title}
+            onClose={() => setPlannerModalOpen(false)}
+            onSuccess={(message) => {
+              setSuccessMessage(message);
+              setPlannerModalOpen(false);
+              // Clear success message after 3 seconds
+              setTimeout(() => setSuccessMessage(''), 3000);
+            }}
+          />
+        )}
       </div>
     </div>
   );
