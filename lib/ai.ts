@@ -334,3 +334,101 @@ Return ONLY valid JSON, no markdown, no explanations.`;
 
   return JSON.parse(jsonText);
 }
+
+export async function extractRecipeFromYouTube(
+  youtubeUrl: string,
+  videoTitle: string,
+  videoDescription: string,
+  currency: string
+): Promise<any> {
+  // Extract video ID from YouTube URL
+  const videoIdMatch = youtubeUrl.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&\n?#]+)/);
+  if (!videoIdMatch) {
+    throw new Error('Invalid YouTube URL');
+  }
+
+  const prompt = `Extract recipe information from this YouTube video and normalize it to JSON format.
+
+Video URL: ${youtubeUrl}
+Video Title: ${videoTitle}
+Video Description: ${videoDescription.substring(0, 4000)}
+
+From the video title and description, extract recipe details and create a complete recipe in JSON format:
+{
+  "title": "Recipe name (from video title or description)",
+  "description": "Brief description of what this recipe is",
+  "cuisine": "Identify cuisine type if possible (Cambodian/Thai/Vietnamese/American/etc)",
+  "dietTags": "Identify dietary tags based on ingredients mentioned",
+  "difficulty": "Estimate difficulty (easy/medium/hard) based on instructions",
+  "timeMins": 30,
+  "estimatedPrice": 5.50,
+  "currency": "${currency}",
+  "kcal": 450,
+  "proteinG": 25,
+  "carbsG": 50,
+  "fatG": 15,
+  "fiberG": 3,
+  "sugarG": 5,
+  "sodiumMg": 600,
+  "ingredients": [{"name": "ingredient name", "qty": "amount", "unit": "g/ml/tbsp/etc", "notes": "optional notes"}],
+  "steps": "Step-by-step cooking instructions in numbered markdown format (1. step one\\n2. step two\\n3. etc)",
+  "safety": "Food safety tips relevant to this recipe in markdown format"
+}
+
+IMPORTANT:
+- Extract as much detail as possible from the video description
+- List ALL ingredients mentioned with quantities if available
+- If quantities are not mentioned, make reasonable estimates for a standard serving
+- Write detailed numbered steps based on what the video likely shows
+- Estimate nutritional values based on typical ingredients
+- Estimate cooking time based on the video length or description
+- Return ONLY valid JSON, no markdown code blocks, no explanations, no text before or after.`;
+
+  const message = await client.messages.create({
+    model: process.env.AI_MODEL || 'claude-3-5-sonnet-20241022',
+    max_tokens: 4000,
+    temperature: 0.3,
+    system: 'You are an expert recipe extraction specialist. Extract recipe information from YouTube video descriptions and titles. Return ONLY valid JSON, with no markdown, no explanations, no code blocks.',
+    messages: [
+      {
+        role: 'user',
+        content: prompt,
+      },
+    ],
+  });
+
+  const content = message.content[0];
+  if (content.type !== 'text') {
+    throw new Error('Unexpected response type from AI');
+  }
+
+  let jsonText = content.text.trim();
+  // Remove markdown code blocks if present
+  if (jsonText.startsWith('```')) {
+    jsonText = jsonText.replace(/^```(?:json)?\n/, '').replace(/\n```$/, '');
+  }
+
+  const recipeData = JSON.parse(jsonText);
+
+  // Ensure ingredients is properly formatted
+  if (recipeData.ingredients && Array.isArray(recipeData.ingredients)) {
+    recipeData.ingredientsJson = JSON.stringify(recipeData.ingredients);
+    delete recipeData.ingredients;
+  }
+
+  // Rename steps and safety fields to match API
+  if (recipeData.steps) {
+    recipeData.stepsMd = recipeData.steps;
+    delete recipeData.steps;
+  }
+
+  if (recipeData.safety) {
+    recipeData.safetyMd = recipeData.safety;
+    delete recipeData.safety;
+  }
+
+  // Add source URL
+  recipeData.sourceUrl = youtubeUrl;
+
+  return recipeData;
+}

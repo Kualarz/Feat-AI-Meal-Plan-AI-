@@ -2,12 +2,14 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { Button } from '@/components/Button';
 import { Input } from '@/components/Input';
 import { Select } from '@/components/Select';
 import { Card } from '@/components/Card';
 import { Navbar } from '@/components/Navbar';
+import { YouTubeImportModal } from '@/components/YouTubeImportModal';
 
 interface Recipe {
   id: string;
@@ -28,9 +30,11 @@ interface Recipe {
 }
 
 export default function RecipesPage() {
+  const router = useRouter();
   const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [filteredRecipes, setFilteredRecipes] = useState<Recipe[]>([]);
   const [loading, setLoading] = useState(true);
+  const [youtubeModalOpen, setYoutubeModalOpen] = useState(false);
   const [filters, setFilters] = useState({
     q: '',
     cuisine: '',
@@ -39,6 +43,11 @@ export default function RecipesPage() {
     maxTime: '',
     maxPrice: '',
   });
+
+  const handleYoutubeImportSuccess = (recipeId: string) => {
+    setYoutubeModalOpen(false);
+    router.push(`/recipes/${recipeId}`);
+  };
 
   useEffect(() => {
     loadRecipes();
@@ -105,9 +114,15 @@ export default function RecipesPage() {
 
       <div className="bg-card border-b border-border">
         <div className="max-w-7xl mx-auto px-4 py-4">
-          <div className="flex justify-between items-center">
+          <div className="flex justify-between items-center flex-wrap gap-4">
             <h2 className="text-2xl font-bold text-foreground">Browse Recipes</h2>
-            <div className="flex gap-4">
+            <div className="flex gap-4 flex-wrap">
+              <Button onClick={() => setYoutubeModalOpen(true)} variant="outline">
+                📹 Import from YouTube
+              </Button>
+              <Link href="/recipes/add">
+                <Button>+ Add Recipe</Button>
+              </Link>
               <Link href="/planner">
                 <Button variant="outline">Planner</Button>
               </Link>
@@ -121,6 +136,12 @@ export default function RecipesPage() {
           </div>
         </div>
       </div>
+
+      <YouTubeImportModal
+        isOpen={youtubeModalOpen}
+        onClose={() => setYoutubeModalOpen(false)}
+        onSuccess={handleYoutubeImportSuccess}
+      />
 
       <div className="max-w-7xl mx-auto px-4 py-8">
         <div className="flex gap-8">
