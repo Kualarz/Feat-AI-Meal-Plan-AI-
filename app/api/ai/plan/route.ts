@@ -23,14 +23,16 @@ export async function POST(request: NextRequest) {
     console.log('Generating meal plan with AI...');
     const mealPlanJson = await generateMealPlan(profile, range);
 
-    // Ensure default user exists
+    // Ensure default user exists (with required password field)
     await db.user.upsert({
       where: { id: DEFAULT_USER_ID },
       update: {},
       create: {
         id: DEFAULT_USER_ID,
         name: profile.name || 'Default User',
-      },
+        email: 'default@feastai.local',
+        password: 'default-user-password-not-for-auth',
+      } as any,
     });
 
     // Save plan to database

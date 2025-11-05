@@ -1,12 +1,18 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { requireAuth, createUnauthorizedResponse } from '@/lib/auth-middleware';
+import { handleAPIError } from '@/lib/api-errors';
 
-const DEFAULT_USER_ID = 'default-user';
-
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
+    // Require authentication
+    const user = requireAuth(request);
+    if (!user) {
+      return createUnauthorizedResponse();
+    }
+
     const plan = await db.plan.findFirst({
-      where: { userId: DEFAULT_USER_ID },
+      where: { userId: user.userId },
       orderBy: { createdAt: 'desc' },
       include: {
         meals: {
@@ -24,10 +30,7 @@ export async function GET() {
 
     return NextResponse.json({ plan });
   } catch (error) {
-    console.error('Error fetching latest plan:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch latest plan' },
-      { status: 500 }
-    );
+    const { statusCode, response } = handleAPIError(error, 'Failed to fetch latest plan');
+    return NextResponse.json(response, { status: statusCode });
   }
 }

@@ -1,23 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { getNutritionSummary } from '@/lib/nutrition';
+import { requireAuth, createUnauthorizedResponse } from '@/lib/auth-middleware';
+import { handleAPIError } from '@/lib/api-errors';
 
-const DEFAULT_USER_ID = 'default-user';
-
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
-    // Ensure default user exists
-    await db.user.upsert({
-      where: { id: DEFAULT_USER_ID },
-      update: {},
-      create: {
-        id: DEFAULT_USER_ID,
-        name: 'Default User',
-      },
-    });
+    // Require authentication
+    const user = requireAuth(request);
+    if (!user) {
+      return createUnauthorizedResponse();
+    }
 
     const preference = await db.preference.findFirst({
-      where: { userId: DEFAULT_USER_ID },
+      where: { userId: user.userId },
       orderBy: { updatedAt: 'desc' },
     });
 
@@ -49,31 +45,24 @@ export async function GET() {
 
     return NextResponse.json(preference);
   } catch (error) {
-    console.error('Error fetching preferences:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch preferences' },
-      { status: 500 }
-    );
+    const { statusCode, response } = handleAPIError(error, 'Failed to fetch preferences');
+    return NextResponse.json(response, { status: statusCode });
   }
 }
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
+    // Require authentication
+    const user = requireAuth(request);
+    if (!user) {
+      return createUnauthorizedResponse();
+    }
 
-    // Ensure default user exists
-    await db.user.upsert({
-      where: { id: DEFAULT_USER_ID },
-      update: {},
-      create: {
-        id: DEFAULT_USER_ID,
-        name: 'Default User',
-      },
-    });
+    const body = await request.json();
 
     // Delete old preferences and create new one
     await db.preference.deleteMany({
-      where: { userId: DEFAULT_USER_ID },
+      where: { userId: user.userId },
     });
 
     // Calculate optimal nutrition targets if weight goal data is provided
@@ -102,7 +91,7 @@ export async function POST(request: NextRequest) {
 
     const preference = await db.preference.create({
       data: {
-        userId: DEFAULT_USER_ID,
+        userId: user.userId,
         caloriesTarget,
         proteinTarget,
         diet: body.diet || 'balanced',
@@ -128,10 +117,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(preference);
   } catch (error) {
-    console.error('Error saving preferences:', error);
-    return NextResponse.json(
-      { error: 'Failed to save preferences' },
-      { status: 500 }
-    );
+    const { statusCode, response } = handleAPIError(error, 'Failed to save preferences');
+    return NextResponse.json(response, { status: statusCode });
   }
 }

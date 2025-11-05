@@ -1,12 +1,23 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
+import { requireAuth, createUnauthorizedResponse } from '@/lib/auth-middleware';
+import { handleAPIError } from '@/lib/api-errors';
 
 const prisma = new PrismaClient();
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
-    // For now, get all plans (in a real app, filter by userId)
+    // Require authentication
+    const user = requireAuth(request);
+    if (!user) {
+      return createUnauthorizedResponse();
+    }
+
+    // Get user's plans only
     const plans = await prisma.plan.findMany({
+      where: {
+        userId: user.userId,
+      },
       orderBy: {
         weekStart: 'desc',
       },
@@ -21,10 +32,7 @@ export async function GET() {
       })),
     });
   } catch (error) {
-    console.error('Error fetching plans:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch plans' },
-      { status: 500 }
-    );
+    const { statusCode, response } = handleAPIError(error, 'Failed to fetch plans');
+    return NextResponse.json(response, { status: statusCode });
   }
 }

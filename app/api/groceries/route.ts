@@ -1,12 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
 import { aggregateIngredients } from '@/lib/groceries';
+import { requireAuth, createUnauthorizedResponse, createForbiddenResponse } from '@/lib/auth-middleware';
 import { ErrorMessages, createErrorResponse, handleAPIError } from '@/lib/api-errors';
 
 const prisma = new PrismaClient();
 
 export async function GET(request: NextRequest) {
   try {
+    // Require authentication
+    const user = requireAuth(request);
+    if (!user) {
+      return createUnauthorizedResponse();
+    }
+
     const { searchParams } = new URL(request.url);
     const planId = searchParams.get('planId');
 
@@ -36,6 +43,11 @@ export async function GET(request: NextRequest) {
         createErrorResponse(404, ErrorMessages.PLAN_NOT_FOUND),
         { status: 404 }
       );
+    }
+
+    // Verify plan belongs to current user
+    if (plan.userId !== user.userId) {
+      return createForbiddenResponse('You do not have access to this plan');
     }
 
     // Filter out meals without recipes

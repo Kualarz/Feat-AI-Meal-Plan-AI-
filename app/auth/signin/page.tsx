@@ -48,13 +48,14 @@ export default function SignInPage() {
       const data = await response.json();
 
       if (!response.ok) {
-        setError(data.error || 'Failed to sign in');
+        setError(data.message || data.error || 'Failed to sign in');
         return;
       }
 
-      // Store user info in localStorage
+      // Store user info and JWT token in localStorage
       localStorage.setItem('user', JSON.stringify(data.user));
       localStorage.setItem('userId', data.user.id);
+      localStorage.setItem('token', data.token);
       localStorage.setItem('isGuest', 'false');
 
       router.push('/recipes');
