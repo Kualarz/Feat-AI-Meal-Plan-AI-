@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
+import Image from 'next/image';
 import ReactMarkdown from 'react-markdown';
 import { Button } from '@/components/Button';
 import { Card } from '@/components/Card';
@@ -115,11 +116,14 @@ export default function RecipeDetailPage() {
 
         <Card>
           {recipe.imageUrl && (
-            <div className="w-full h-96 bg-muted rounded-xl mb-6 overflow-hidden">
-              <img
+            <div className="w-full h-96 bg-muted rounded-xl mb-6 overflow-hidden relative">
+              <Image
                 src={recipe.imageUrl}
                 alt={recipe.title}
-                className="w-full h-full object-cover"
+                fill
+                className="object-cover"
+                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 90vw, 1000px"
+                priority={true}
               />
             </div>
           )}

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { Button } from '@/components/Button';
 import { Input } from '@/components/Input';
 import { Select } from '@/components/Select';
@@ -211,11 +212,14 @@ export default function RecipesPage() {
                   <Link key={recipe.id} href={`/recipes/${recipe.id}`}>
                     <Card className="h-full hover:shadow-lg transition-shadow cursor-pointer">
                       {recipe.imageUrl && (
-                        <div className="w-full h-48 bg-muted rounded-xl mb-4 overflow-hidden">
-                          <img
+                        <div className="w-full h-48 bg-muted rounded-xl mb-4 overflow-hidden relative">
+                          <Image
                             src={recipe.imageUrl}
                             alt={recipe.title}
-                            className="w-full h-full object-cover"
+                            fill
+                            className="object-cover"
+                            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                            priority={false}
                           />
                         </div>
                       )}
