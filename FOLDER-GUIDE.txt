@@ -1,0 +1,153 @@
+================================================================================
+                      📁 WHAT'S IN EACH FOLDER?
+================================================================================
+
+eatr-vibe-app/
+│
+├── 📄 START-HERE.txt          ← READ THIS FIRST!
+├── 📄 SETUP.txt               ← Detailed setup instructions
+├── 📄 COMMANDS.txt            ← Quick command reference
+├── 📄 README.md               ← Technical documentation
+│
+├── 📄 package.json            ← App info & dependencies list
+├── 📄 tsconfig.json           ← TypeScript settings
+├── 📄 tailwind.config.ts      ← Styling settings
+├── 📄 next.config.js          ← Next.js settings
+├── 📄 .env.local.example      ← Example env file (COPY THIS!)
+├── 📄 .env.local              ← YOUR API KEY GOES HERE (create this!)
+├── 📄 .gitignore              ← Files to ignore in git
+│
+├── 📁 app/                    ← ALL YOUR WEB PAGES
+│   ├── page.tsx              ← Home page (http://localhost:3000)
+│   ├── layout.tsx            ← Overall page layout
+│   ├── globals.css           ← Global styles
+│   │
+│   ├── 📁 setup/             ← Preferences page
+│   │   └── page.tsx          ← Where you set diet, allergens, etc.
+│   │
+│   ├── 📁 planner/           ← Meal planner page
+│   │   └── page.tsx          ← 7-day calendar with meals
+│   │
+│   ├── 📁 recipes/           ← Recipe browser
+│   │   ├── page.tsx          ← Recipe list with filters
+│   │   └── [id]/
+│   │       └── page.tsx      ← Individual recipe details
+│   │
+│   ├── 📁 groceries/         ← Shopping list page
+│   │   └── page.tsx          ← Grouped grocery list
+│   │
+│   └── 📁 api/               ← BACKEND CODE (handles data)
+│       ├── preferences/      ← Save/load preferences
+│       ├── ai/plan/          ← AI meal generation
+│       ├── recipes/          ← Recipe database
+│       └── plans/latest/     ← Get latest meal plan
+│
+├── 📁 components/            ← REUSABLE UI PARTS
+│   ├── Button.tsx            ← Buttons
+│   ├── Card.tsx              ← Cards
+│   ├── Input.tsx             ← Input fields
+│   └── Select.tsx            ← Dropdown menus
+│
+├── 📁 lib/                   ← HELPER CODE
+│   ├── ai.ts                 ← AI/Claude integration
+│   └── db.ts                 ← Database connection
+│
+├── 📁 prisma/                ← DATABASE SETUP
+│   ├── schema.prisma         ← Database structure
+│   └── dev.db                ← SQLite database (created after setup)
+│
+└── 📁 node_modules/          ← Dependencies (created after npm install)
+
+
+================================================================================
+                        🎯 IMPORTANT FILES
+================================================================================
+
+YOU MUST CREATE:
+  .env.local                  ← Copy from .env.local.example and add API key
+
+YOU MIGHT EDIT:
+  app/setup/page.tsx          ← Change default preferences
+  prisma/schema.prisma        ← Modify database structure
+
+DON'T TOUCH:
+  node_modules/               ← Auto-generated, never edit
+  .next/                      ← Build files, auto-generated
+
+
+================================================================================
+                        🔍 FILE TYPES
+================================================================================
+
+.tsx files     → TypeScript + React pages/components
+.ts files      → TypeScript code
+.css files     → Styles
+.prisma files  → Database schema
+.json files    → Configuration
+.txt files     → Documentation (like this!)
+
+
+================================================================================
+                        💡 WHICH FILES DO WHAT?
+================================================================================
+
+app/page.tsx
+  → The home page with "Plan SEA-friendly meals with AI"
+
+app/setup/page.tsx
+  → Form where you enter calories, diet, allergens, etc.
+
+app/planner/page.tsx
+  → Shows your 7-day meal plan, click "Generate Plan" button
+
+app/recipes/page.tsx
+  → Browse all recipes with filters
+
+app/groceries/page.tsx
+  → Shows shopping list from your meal plan
+
+lib/ai.ts
+  → Connects to Claude AI to generate meal plans
+
+lib/db.ts
+  → Connects to your database
+
+components/Button.tsx
+  → Makes nice-looking buttons used throughout the app
+
+
+================================================================================
+                        📦 AFTER YOU RUN npm install
+================================================================================
+
+New folders will appear:
+  node_modules/              ← All installed packages (HUGE folder)
+  .next/                     ← Build cache
+
+New files will appear:
+  package-lock.json          ← Locks dependency versions
+
+
+================================================================================
+                        🗄️ AFTER YOU RUN npm run db:push
+================================================================================
+
+New files will appear:
+  prisma/dev.db              ← Your SQLite database
+  prisma/dev.db-journal      ← Database journal file
+
+
+================================================================================
+                        🌐 WHEN APP IS RUNNING
+================================================================================
+
+Visit these URLs:
+
+  http://localhost:3000              Home page
+  http://localhost:3000/setup        Set preferences
+  http://localhost:3000/planner      View meal plan
+  http://localhost:3000/recipes      Browse recipes
+  http://localhost:3000/groceries    Shopping list
+
+
+================================================================================

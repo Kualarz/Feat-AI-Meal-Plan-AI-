@@ -1,0 +1,89 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id          String       @id @default(cuid())
+  email       String?
+  name        String?
+  createdAt   DateTime     @default(now())
+  preferences Preference[]
+  plans       Plan[]
+}
+
+model Preference {
+  id                  String   @id @default(cuid())
+  userId              String
+  user                User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  caloriesTarget      Int?
+  proteinTarget       Int?
+  diet                String   // balanced, vegetarian, vegan, pescatarian, keto
+  halalEnabled        Boolean  @default(false)
+  vegetarianEnabled   Boolean  @default(false)
+  veganEnabled        Boolean  @default(false)
+  allergens           String?  // CSV
+  dislikes            String?  // CSV
+  cuisines            String?  // CSV, default to "Cambodian,Thai,Vietnamese"
+  timeBudgetMins      Int?
+  budgetLevel         String?  // low, medium, high
+  equipment           String?  // CSV
+  region              String?  // e.g. KH, AU
+  currency            String?  // e.g. KHR, AUD
+  updatedAt           DateTime @updatedAt
+}
+
+model Recipe {
+  id              String     @id @default(cuid())
+  title           String
+  description     String?
+  cuisine         String?
+  dietTags        String?    // CSV: vegetarian, vegan, halal, etc.
+  difficulty      String?    // easy/medium/hard
+  timeMins        Int?
+  estimatedPrice  Float?
+  currency        String?
+  kcal            Int?
+  proteinG        Int?
+  carbsG          Int?
+  fatG            Int?
+  fiberG          Int?
+  sugarG          Int?
+  sodiumMg        Int?
+  ingredientsJson String     // JSON string of [{name,qty,unit,notes}]
+  stepsMd         String     // Markdown
+  safetyMd        String?    // Markdown
+  imageUrl        String?
+  sourceUrl       String?
+  tags            String?    // CSV
+  createdAt       DateTime   @default(now())
+  planMeals       PlanMeal[]
+}
+
+model Plan {
+  id        String     @id @default(cuid())
+  userId    String
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  weekStart DateTime
+  weekEnd   DateTime
+  createdAt DateTime   @default(now())
+  meals     PlanMeal[]
+}
+
+model PlanMeal {
+  id       String  @id @default(cuid())
+  planId   String
+  plan     Plan    @relation(fields: [planId], references: [id], onDelete: Cascade)
+  dateISO  String
+  slot     String  // breakfast, lunch, dinner, dessert
+  recipeId String?
+  recipe   Recipe? @relation(fields: [recipeId], references: [id])
+  notes    String?
+}

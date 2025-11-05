@@ -1,0 +1,204 @@
+================================================================================
+  EATR-VIBE - AI MEAL PLAN & RECIPE APP
+  Setup Instructions
+================================================================================
+
+WHAT IS THIS?
+  A web app that uses AI to create 7-day meal plans with Southeast Asian
+  recipes (Cambodian, Thai, Vietnamese). It tracks your diet preferences,
+  allergens, and generates shopping lists.
+
+REQUIREMENTS:
+  1. Node.js 18 or higher installed
+  2. An Anthropic API key (free to get at https://console.anthropic.com/)
+  3. Internet connection
+
+================================================================================
+STEP-BY-STEP SETUP (5 MINUTES)
+================================================================================
+
+STEP 1: Open Terminal in This Folder
+  - Right-click this folder in File Explorer
+  - Click "Open in Terminal" or "Open in Windows Terminal"
+  - Or: Open Command Prompt and type:
+    cd "c:\Users\Kualar\Documents\eatr-vibe-app"
+
+STEP 2: Install Everything
+  Type this command and press Enter:
+
+    npm install
+
+  Wait 1-2 minutes for it to finish.
+
+STEP 3: Get Your API Key
+  1. Go to: https://console.anthropic.com/
+  2. Sign up or log in
+  3. Go to "API Keys" section
+  4. Click "Create Key"
+  5. Copy the key (starts with "sk-ant-...")
+
+STEP 4: Create Your .env.local File
+  1. Copy the file ".env.local.example"
+  2. Rename the copy to ".env.local" (remove .example)
+  3. Open .env.local in Notepad
+  4. Replace "your_key_here" with your actual API key
+  5. Save and close
+
+  Your .env.local should look like:
+  ANTHROPIC_API_KEY=sk-ant-api03-xxxxxxxxxxxxx
+  AI_MODEL=claude-3-5-sonnet-20241022
+  NEXT_PUBLIC_APP_NAME="eatr-vibe"
+  DATABASE_URL="file:./dev.db"
+
+STEP 5: Setup Database
+  Type this command:
+
+    npm run db:push
+
+  You should see "Database synchronized" message.
+
+STEP 6: Start the App
+  Type this command:
+
+    npm run dev
+
+  Wait 10 seconds. You should see:
+  "Local: http://localhost:3000"
+
+STEP 7: Open in Browser
+  Open your web browser and go to:
+
+    http://localhost:3000
+
+================================================================================
+HOW TO USE THE APP
+================================================================================
+
+1. FIRST TIME:
+   - Click "Get Started"
+   - Fill in your diet preferences:
+     * Daily calories (example: 2000)
+     * Daily protein (example: 120)
+     * Diet type: balanced, vegetarian, vegan, etc.
+     * Check "Halal" if you want halal-only meals
+     * Add any allergens (example: peanut, shellfish)
+     * Leave cuisines as: Cambodian,Thai,Vietnamese
+     * Max cooking time: 40 minutes
+     * Budget: medium
+   - Click "Save & Continue"
+
+2. GENERATE MEAL PLAN:
+   - You'll be on the "Planner" page
+   - Click "Generate Plan"
+   - Wait 20-30 seconds for AI to create your plan
+   - You'll see 7 days of meals (breakfast, lunch, dinner, dessert)
+
+3. VIEW RECIPES:
+   - Click "Recipes" in the menu
+   - Browse all recipes
+   - Use filters to find specific types
+   - Click any recipe to see full details
+
+4. CHECK GROCERY LIST:
+   - Click "Groceries" in the menu
+   - See all ingredients you need
+   - Items grouped by store sections
+   - Check off items as you shop
+   - Click "Export to Text" to save
+
+================================================================================
+FOLDER STRUCTURE (What's What)
+================================================================================
+
+eatr-vibe-app/
+├── app/                    Your web pages
+│   ├── page.tsx           Home page
+│   ├── setup/             Preferences page
+│   ├── planner/           Meal calendar
+│   ├── recipes/           Recipe browser
+│   ├── groceries/         Shopping list
+│   └── api/               Backend code
+├── components/            Reusable UI parts (buttons, cards)
+├── lib/                   Helper code (AI, database)
+├── prisma/                Database setup
+├── package.json           App info and dependencies
+├── .env.local            YOUR API KEY (create this!)
+└── README.md             Documentation
+
+================================================================================
+TROUBLESHOOTING
+================================================================================
+
+PROBLEM: "npm not found"
+SOLUTION: Install Node.js from https://nodejs.org/
+
+PROBLEM: "Failed to generate meal plan"
+SOLUTION:
+  - Check your API key in .env.local is correct
+  - Make sure you have credits at https://console.anthropic.com/
+  - Check browser console (F12) for errors
+
+PROBLEM: Database errors
+SOLUTION:
+  - Delete the file "prisma/dev.db" if it exists
+  - Run: npm run db:push
+
+PROBLEM: Port 3000 already in use
+SOLUTION: Run on different port: npm run dev -- -p 3001
+          Then visit: http://localhost:3001
+
+PROBLEM: White screen or errors
+SOLUTION:
+  - Press Ctrl+C to stop the server
+  - Run: npm run dev
+  - Refresh browser
+
+================================================================================
+STOPPING THE APP
+================================================================================
+
+To stop the development server:
+  - Press Ctrl+C in the terminal
+  - Type 'Y' if asked to terminate
+
+To start again later:
+  - Open terminal in this folder
+  - Run: npm run dev
+
+================================================================================
+FEATURES OVERVIEW
+================================================================================
+
+✓ AI generates personalized meal plans
+✓ 7 days of meals (28 recipes per week)
+✓ Respects your diet (halal, vegan, vegetarian)
+✓ Avoids your allergens and dislikes
+✓ Shows nutrition info (calories, protein, carbs, fat)
+✓ Auto-creates shopping lists
+✓ Filters recipes by cuisine, time, price
+✓ Responsive design (works on phone/tablet/desktop)
+
+================================================================================
+COSTS
+================================================================================
+
+- This app: FREE (open source)
+- Node.js: FREE
+- Anthropic API:
+  * Free tier: Limited credits
+  * Pay-as-you-go: ~$0.01-0.03 per meal plan
+  * One meal plan ≈ 10,000 tokens ≈ $0.03
+
+================================================================================
+SUPPORT
+================================================================================
+
+If you get stuck:
+1. Read the error message carefully
+2. Check the console (F12 in browser)
+3. Verify .env.local has correct API key
+4. Try deleting node_modules and running: npm install
+
+================================================================================
+ENJOY YOUR AI MEAL PLANNING! 🍜
+================================================================================

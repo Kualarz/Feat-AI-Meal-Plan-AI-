@@ -1,0 +1,60 @@
+================================================================================
+                        QUICK COMMAND REFERENCE
+================================================================================
+
+Open Terminal in this folder, then use these commands:
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ FIRST TIME SETUP                                                            │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+npm install              Install all dependencies
+npm run db:push          Setup the database
+
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ DAILY USE                                                                   │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+npm run dev              Start the app (http://localhost:3000)
+Ctrl+C                   Stop the app
+
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ OPTIONAL COMMANDS                                                           │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+npm run build            Build for production
+npm run start            Run production build
+npm run db:studio        Open database viewer
+npm run db:migrate       Create database migration
+
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ TROUBLESHOOTING                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+Delete node_modules folder, then:
+npm install              Reinstall everything
+
+Delete prisma/dev.db file, then:
+npm run db:push          Recreate database
+
+
+================================================================================
+                           TYPICAL WORKFLOW
+================================================================================
+
+First time:
+  1. npm install
+  2. Create .env.local with your API key
+  3. npm run db:push
+  4. npm run dev
+
+Every other time:
+  1. npm run dev
+  2. Open http://localhost:3000
+  3. When done: Ctrl+C
+
+
+================================================================================
