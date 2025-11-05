@@ -270,8 +270,8 @@ export default function SetupPage() {
         throw new Error('Failed to save preferences');
       }
 
-      // After preferences are saved, take the user to the Sign Up page
-      router.push('/auth/signup');
+      // After preferences are saved, take the user to the Meal Planner
+      router.push('/planner');
     } catch (error) {
       console.error('Error saving preferences:', error);
       alert('Failed to save preferences. Please try again.');
