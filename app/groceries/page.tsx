@@ -194,8 +194,8 @@ export default function GroceriesPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center">
-        <div className="text-slate-600">Loading...</div>
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-muted-foreground">Loading...</div>
       </div>
     );
   }
@@ -205,11 +205,11 @@ export default function GroceriesPage() {
   );
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
-      <nav className="bg-white border-b border-slate-200">
+    <div className="min-h-screen bg-background">
+      <nav className="bg-card border-b border-border">
         <div className="max-w-7xl mx-auto px-4 py-4">
           <div className="flex justify-between items-center">
-            <h1 className="text-2xl font-bold text-slate-900">eatr-vibe</h1>
+            <h1 className="text-2xl font-bold text-foreground">eatr-vibe</h1>
             <div className="flex gap-4">
               <Link href="/planner">
                 <Button variant="outline">Planner</Button>
@@ -227,7 +227,7 @@ export default function GroceriesPage() {
 
       <div className="max-w-4xl mx-auto px-4 py-8">
         <div className="flex justify-between items-center mb-8">
-          <h2 className="text-3xl font-bold text-slate-900">Grocery List</h2>
+          <h2 className="text-3xl font-bold text-foreground">Grocery List</h2>
           {hasGroceries && (
             <Button variant="primary" onClick={exportToText}>
               Export to Text
@@ -238,10 +238,10 @@ export default function GroceriesPage() {
         {!hasGroceries ? (
           <Card className="text-center py-12">
             <div className="text-6xl mb-4">🛒</div>
-            <h3 className="text-xl font-semibold text-slate-900 mb-2">
+            <h3 className="text-xl font-semibold text-foreground mb-2">
               No grocery list yet
             </h3>
-            <p className="text-slate-600 mb-6">
+            <p className="text-muted-foreground mb-6">
               Generate a meal plan to create your grocery list
             </p>
             <Link href="/planner">
@@ -255,7 +255,7 @@ export default function GroceriesPage() {
 
               return (
                 <Card key={section}>
-                  <h3 className="text-xl font-semibold text-slate-900 mb-4">
+                  <h3 className="text-xl font-semibold text-foreground mb-4">
                     {section}
                   </h3>
 
@@ -266,25 +266,25 @@ export default function GroceriesPage() {
                       return (
                         <label
                           key={itemKey}
-                          className="flex items-center gap-3 p-3 bg-slate-50 rounded-lg border border-slate-200 cursor-pointer hover:bg-slate-100 transition-colors"
+                          className="flex items-center gap-3 p-3 bg-muted rounded-lg border border-border cursor-pointer hover:opacity-80 transition-opacity"
                         >
                           <input
                             type="checkbox"
                             checked={checked[itemKey] || false}
                             onChange={() => toggleCheck(itemKey)}
-                            className="w-5 h-5 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
+                            className="w-5 h-5 rounded border-border text-primary focus:ring-primary"
                           />
                           <div className="flex-1">
                             <span
                               className={
                                 checked[itemKey]
-                                  ? 'line-through text-slate-400'
-                                  : 'text-slate-900'
+                                  ? 'line-through text-muted-foreground'
+                                  : 'text-foreground'
                               }
                             >
                               {item.name}
                               {item.totalQty > 0 && (
-                                <span className="text-slate-600 ml-2">
+                                <span className="text-muted-foreground ml-2">
                                   ({item.totalQty} {item.unit})
                                 </span>
                               )}

@@ -130,8 +130,8 @@ export default function PlannerPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center">
-        <div className="text-slate-600">Loading...</div>
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-muted-foreground">Loading...</div>
       </div>
     );
   }
@@ -153,11 +153,11 @@ export default function PlannerPage() {
   const groupedMeals = groupMealsByDate();
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
-      <nav className="bg-white border-b border-slate-200">
+    <div className="min-h-screen bg-background">
+      <nav className="bg-card border-b border-border">
         <div className="max-w-7xl mx-auto px-4 py-4">
           <div className="flex justify-between items-center">
-            <h1 className="text-2xl font-bold text-slate-900">eatr-vibe</h1>
+            <h1 className="text-2xl font-bold text-foreground">eatr-vibe</h1>
             <div className="flex gap-4">
               <Link href="/recipes">
                 <Button variant="outline">Recipes</Button>
@@ -176,11 +176,11 @@ export default function PlannerPage() {
       <div className="max-w-7xl mx-auto px-4 py-8">
         <div className="flex justify-between items-center mb-8">
           <div>
-            <h2 className="text-3xl font-bold text-slate-900">
+            <h2 className="text-3xl font-bold text-foreground">
               Your Meal Plan
             </h2>
             {plan && (
-              <p className="text-slate-600 mt-1">
+              <p className="text-muted-foreground mt-1">
                 {new Date(plan.weekStart).toLocaleDateString()} -{' '}
                 {new Date(plan.weekEnd).toLocaleDateString()}
               </p>
@@ -198,10 +198,10 @@ export default function PlannerPage() {
         {!plan ? (
           <Card className="text-center py-12">
             <div className="text-6xl mb-4">🍜</div>
-            <h3 className="text-xl font-semibold text-slate-900 mb-2">
+            <h3 className="text-xl font-semibold text-foreground mb-2">
               No meal plan yet
             </h3>
-            <p className="text-slate-600 mb-6">
+            <p className="text-muted-foreground mb-6">
               Click "Generate Plan" to create your personalized 7-day meal plan
             </p>
           </Card>
@@ -209,7 +209,7 @@ export default function PlannerPage() {
           <div className="grid gap-6">
             {groupedMeals.map(([date, meals]) => (
               <Card key={date}>
-                <h3 className="text-xl font-semibold text-slate-900 mb-4">
+                <h3 className="text-xl font-semibold text-foreground mb-4">
                   {new Date(date).toLocaleDateString('en-US', {
                     weekday: 'long',
                     month: 'long',
@@ -224,17 +224,17 @@ export default function PlannerPage() {
                     return (
                       <div
                         key={slot}
-                        className="bg-slate-50 rounded-xl p-4 border border-slate-200"
+                        className="bg-muted rounded-xl p-4 border border-border"
                       >
-                        <div className="text-xs font-semibold text-emerald-600 uppercase mb-2">
+                        <div className="text-xs font-semibold text-primary uppercase mb-2">
                           {slot}
                         </div>
                         {meal?.recipe ? (
                           <div>
-                            <h4 className="font-semibold text-slate-900 mb-2">
+                            <h4 className="font-semibold text-foreground mb-2">
                               {meal.recipe.title}
                             </h4>
-                            <div className="space-y-1 text-sm text-slate-600">
+                            <div className="space-y-1 text-sm text-muted-foreground">
                               {meal.recipe.timeMins && (
                                 <div>⏱️ {meal.recipe.timeMins} min</div>
                               )}
@@ -253,13 +253,13 @@ export default function PlannerPage() {
                             </div>
                             <Link
                               href={`/recipes/${meal.recipe.id}`}
-                              className="text-sm text-emerald-600 hover:text-emerald-700 mt-3 inline-block"
+                              className="text-sm text-primary hover:opacity-80 mt-3 inline-block"
                             >
                               View recipe →
                             </Link>
                           </div>
                         ) : (
-                          <div className="text-sm text-slate-400">
+                          <div className="text-sm text-muted-foreground">
                             No meal planned
                           </div>
                         )}

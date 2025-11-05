@@ -71,8 +71,8 @@ export default function RecipeDetailPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center">
-        <div className="text-slate-600">Loading...</div>
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-muted-foreground">Loading...</div>
       </div>
     );
   }
@@ -84,11 +84,11 @@ export default function RecipeDetailPage() {
   const ingredients: Ingredient[] = JSON.parse(recipe.ingredientsJson);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
-      <nav className="bg-white border-b border-slate-200">
+    <div className="min-h-screen bg-background">
+      <nav className="bg-card border-b border-border">
         <div className="max-w-7xl mx-auto px-4 py-4">
           <div className="flex justify-between items-center">
-            <h1 className="text-2xl font-bold text-slate-900">eatr-vibe</h1>
+            <h1 className="text-2xl font-bold text-foreground">eatr-vibe</h1>
             <div className="flex gap-4">
               <Link href="/planner">
                 <Button variant="outline">Planner</Button>
@@ -115,7 +115,7 @@ export default function RecipeDetailPage() {
 
         <Card>
           {recipe.imageUrl && (
-            <div className="w-full h-96 bg-slate-200 rounded-xl mb-6 overflow-hidden">
+            <div className="w-full h-96 bg-muted rounded-xl mb-6 overflow-hidden">
               <img
                 src={recipe.imageUrl}
                 alt={recipe.title}
@@ -124,30 +124,30 @@ export default function RecipeDetailPage() {
             </div>
           )}
 
-          <h1 className="text-4xl font-bold text-slate-900 mb-4">
+          <h1 className="text-4xl font-bold text-foreground mb-4">
             {recipe.title}
           </h1>
 
           {recipe.description && (
-            <p className="text-lg text-slate-600 mb-6">{recipe.description}</p>
+            <p className="text-lg text-muted-foreground mb-6">{recipe.description}</p>
           )}
 
           {/* Tags */}
           <div className="flex flex-wrap gap-2 mb-6">
             {recipe.cuisine && (
-              <span className="px-3 py-1 bg-emerald-100 text-emerald-700 rounded-lg text-sm font-medium">
+              <span className="px-3 py-1 bg-primary/10 text-primary rounded-lg text-sm font-medium">
                 {recipe.cuisine}
               </span>
             )}
             {recipe.difficulty && (
-              <span className="px-3 py-1 bg-purple-100 text-purple-700 rounded-lg text-sm font-medium">
+              <span className="px-3 py-1 bg-primary/10 text-primary rounded-lg text-sm font-medium">
                 {recipe.difficulty}
               </span>
             )}
             {recipe.dietTags?.split(',').map((tag) => (
               <span
                 key={tag}
-                className="px-3 py-1 bg-blue-100 text-blue-700 rounded-lg text-sm font-medium"
+                className="px-3 py-1 bg-primary/10 text-primary rounded-lg text-sm font-medium"
               >
                 {tag.trim()}
               </span>
@@ -157,37 +157,37 @@ export default function RecipeDetailPage() {
           {/* Metrics */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
             {recipe.timeMins && (
-              <div className="bg-slate-50 rounded-xl p-4 border border-slate-200">
+              <div className="bg-muted rounded-xl p-4 border border-border">
                 <div className="text-2xl mb-1">⏱️</div>
-                <div className="text-sm text-slate-600">Time</div>
-                <div className="font-semibold text-slate-900">
+                <div className="text-sm text-muted-foreground">Time</div>
+                <div className="font-semibold text-foreground">
                   {recipe.timeMins} min
                 </div>
               </div>
             )}
             {recipe.estimatedPrice && (
-              <div className="bg-slate-50 rounded-xl p-4 border border-slate-200">
+              <div className="bg-muted rounded-xl p-4 border border-border">
                 <div className="text-2xl mb-1">💰</div>
-                <div className="text-sm text-slate-600">Price</div>
-                <div className="font-semibold text-slate-900">
+                <div className="text-sm text-muted-foreground">Price</div>
+                <div className="font-semibold text-foreground">
                   {recipe.estimatedPrice} {recipe.currency}
                 </div>
               </div>
             )}
             {recipe.kcal && (
-              <div className="bg-slate-50 rounded-xl p-4 border border-slate-200">
+              <div className="bg-muted rounded-xl p-4 border border-border">
                 <div className="text-2xl mb-1">🔥</div>
-                <div className="text-sm text-slate-600">Calories</div>
-                <div className="font-semibold text-slate-900">
+                <div className="text-sm text-muted-foreground">Calories</div>
+                <div className="font-semibold text-foreground">
                   {recipe.kcal} kcal
                 </div>
               </div>
             )}
             {recipe.proteinG && (
-              <div className="bg-slate-50 rounded-xl p-4 border border-slate-200">
+              <div className="bg-muted rounded-xl p-4 border border-border">
                 <div className="text-2xl mb-1">💪</div>
-                <div className="text-sm text-slate-600">Protein</div>
-                <div className="font-semibold text-slate-900">
+                <div className="text-sm text-muted-foreground">Protein</div>
+                <div className="font-semibold text-foreground">
                   {recipe.proteinG}g
                 </div>
               </div>
@@ -197,47 +197,47 @@ export default function RecipeDetailPage() {
           {/* Macros */}
           {(recipe.carbsG || recipe.fatG || recipe.fiberG || recipe.sugarG || recipe.sodiumMg) && (
             <div className="mb-8">
-              <h2 className="text-2xl font-bold text-slate-900 mb-4">
+              <h2 className="text-2xl font-bold text-foreground mb-4">
                 Nutrition Facts
               </h2>
-              <div className="bg-slate-50 rounded-xl p-4 border border-slate-200">
+              <div className="bg-muted rounded-xl p-4 border border-border">
                 <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
                   {recipe.carbsG && (
                     <div>
-                      <div className="text-sm text-slate-600">Carbs</div>
-                      <div className="font-semibold text-slate-900">
+                      <div className="text-sm text-muted-foreground">Carbs</div>
+                      <div className="font-semibold text-foreground">
                         {recipe.carbsG}g
                       </div>
                     </div>
                   )}
                   {recipe.fatG && (
                     <div>
-                      <div className="text-sm text-slate-600">Fat</div>
-                      <div className="font-semibold text-slate-900">
+                      <div className="text-sm text-muted-foreground">Fat</div>
+                      <div className="font-semibold text-foreground">
                         {recipe.fatG}g
                       </div>
                     </div>
                   )}
                   {recipe.fiberG && (
                     <div>
-                      <div className="text-sm text-slate-600">Fiber</div>
-                      <div className="font-semibold text-slate-900">
+                      <div className="text-sm text-muted-foreground">Fiber</div>
+                      <div className="font-semibold text-foreground">
                         {recipe.fiberG}g
                       </div>
                     </div>
                   )}
                   {recipe.sugarG && (
                     <div>
-                      <div className="text-sm text-slate-600">Sugar</div>
-                      <div className="font-semibold text-slate-900">
+                      <div className="text-sm text-muted-foreground">Sugar</div>
+                      <div className="font-semibold text-foreground">
                         {recipe.sugarG}g
                       </div>
                     </div>
                   )}
                   {recipe.sodiumMg && (
                     <div>
-                      <div className="text-sm text-slate-600">Sodium</div>
-                      <div className="font-semibold text-slate-900">
+                      <div className="text-sm text-muted-foreground">Sodium</div>
+                      <div className="font-semibold text-foreground">
                         {recipe.sodiumMg}mg
                       </div>
                     </div>
@@ -249,14 +249,14 @@ export default function RecipeDetailPage() {
 
           {/* Ingredients */}
           <div className="mb-8">
-            <h2 className="text-2xl font-bold text-slate-900 mb-4">
+            <h2 className="text-2xl font-bold text-foreground mb-4">
               Ingredients
             </h2>
             <div className="space-y-2">
               {ingredients.map((ingredient, index) => (
                 <label
                   key={index}
-                  className="flex items-start gap-3 p-3 bg-slate-50 rounded-lg border border-slate-200 cursor-pointer hover:bg-slate-100 transition-colors"
+                  className="flex items-start gap-3 p-3 bg-muted rounded-lg border border-border cursor-pointer hover:opacity-80 transition-opacity"
                 >
                   <input
                     type="checkbox"
@@ -267,14 +267,14 @@ export default function RecipeDetailPage() {
                         [index]: e.target.checked,
                       }))
                     }
-                    className="w-5 h-5 mt-0.5 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
+                    className="w-5 h-5 mt-0.5 rounded border-border text-primary focus:ring-primary"
                   />
                   <div className="flex-1">
                     <span
                       className={
                         checkedIngredients[index]
-                          ? 'line-through text-slate-400'
-                          : 'text-slate-900'
+                          ? 'line-through text-muted-foreground'
+                          : 'text-foreground'
                       }
                     >
                       {ingredient.qty && ingredient.unit
@@ -291,21 +291,21 @@ export default function RecipeDetailPage() {
 
           {/* Steps */}
           <div className="mb-8">
-            <h2 className="text-2xl font-bold text-slate-900 mb-4">
+            <h2 className="text-2xl font-bold text-foreground mb-4">
               Cooking Steps
             </h2>
-            <div className="prose prose-slate max-w-none">
+            <div className="prose prose-slate dark:prose-invert max-w-none">
               <ReactMarkdown>{recipe.stepsMd}</ReactMarkdown>
             </div>
           </div>
 
           {/* Food Safety */}
           {recipe.safetyMd && (
-            <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-6">
-              <h2 className="text-xl font-bold text-yellow-900 mb-3">
+            <div className="bg-warning/10 border border-warning rounded-xl p-6">
+              <h2 className="text-xl font-bold text-warning mb-3">
                 ⚠️ Food Safety
               </h2>
-              <div className="prose prose-yellow max-w-none">
+              <div className="prose prose-slate dark:prose-invert max-w-none">
                 <ReactMarkdown>{recipe.safetyMd}</ReactMarkdown>
               </div>
             </div>
@@ -313,13 +313,13 @@ export default function RecipeDetailPage() {
 
           {/* Source */}
           {recipe.sourceUrl && (
-            <div className="mt-6 text-sm text-slate-600">
+            <div className="mt-6 text-sm text-muted-foreground">
               Source:{' '}
               <a
                 href={recipe.sourceUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-emerald-600 hover:text-emerald-700"
+                className="text-primary hover:opacity-80"
               >
                 {recipe.sourceUrl}
               </a>

@@ -94,13 +94,13 @@ export default function RecipesPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800">
+    <div className="min-h-screen bg-background">
       <Navbar />
 
-      <div className="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700">
+      <div className="bg-card border-b border-border">
         <div className="max-w-7xl mx-auto px-4 py-4">
           <div className="flex justify-between items-center">
-            <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Browse Recipes</h2>
+            <h2 className="text-2xl font-bold text-foreground">Browse Recipes</h2>
             <div className="flex gap-4">
               <Link href="/planner">
                 <Button variant="outline">Planner</Button>
@@ -121,7 +121,7 @@ export default function RecipesPage() {
           {/* Filters Sidebar */}
           <aside className="hidden md:block w-64 flex-shrink-0">
             <Card>
-              <h2 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">
+              <h2 className="text-lg font-semibold text-foreground mb-4">
                 Filters
               </h2>
 
@@ -173,16 +173,16 @@ export default function RecipesPage() {
           {/* Recipes Grid */}
           <div className="flex-1">
             {loading ? (
-              <div className="text-center py-12 text-slate-600 dark:text-slate-400">
+              <div className="text-center py-12 text-muted-foreground">
                 Loading recipes...
               </div>
             ) : filteredRecipes.length === 0 ? (
               <Card className="text-center py-12">
                 <div className="text-6xl mb-4">🍜</div>
-                <h3 className="text-xl font-semibold text-slate-900 dark:text-white mb-2">
+                <h3 className="text-xl font-semibold text-foreground mb-2">
                   No recipes found
                 </h3>
-                <p className="text-slate-600 dark:text-slate-400">
+                <p className="text-muted-foreground">
                   Try adjusting your filters
                 </p>
               </Card>
@@ -192,7 +192,7 @@ export default function RecipesPage() {
                   <Link key={recipe.id} href={`/recipes/${recipe.id}`}>
                     <Card className="h-full hover:shadow-lg transition-shadow cursor-pointer">
                       {recipe.imageUrl && (
-                        <div className="w-full h-48 bg-slate-200 dark:bg-slate-700 rounded-xl mb-4 overflow-hidden">
+                        <div className="w-full h-48 bg-muted rounded-xl mb-4 overflow-hidden">
                           <img
                             src={recipe.imageUrl}
                             alt={recipe.title}
@@ -200,29 +200,29 @@ export default function RecipesPage() {
                           />
                         </div>
                       )}
-                      <h3 className="font-semibold text-slate-900 dark:text-white mb-2">
+                      <h3 className="font-semibold text-foreground mb-2">
                         {recipe.title}
                       </h3>
                       {recipe.description && (
-                        <p className="text-sm text-slate-600 dark:text-slate-400 mb-3 line-clamp-2">
+                        <p className="text-sm text-muted-foreground mb-3 line-clamp-2">
                           {recipe.description}
                         </p>
                       )}
 
                       <div className="flex flex-wrap gap-2 mb-3">
                         {recipe.cuisine && (
-                          <span className="px-2 py-1 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 rounded-lg text-xs font-medium">
+                          <span className="px-2 py-1 bg-primary/10 text-primary rounded-lg text-xs font-medium">
                             {recipe.cuisine}
                           </span>
                         )}
                         {recipe.difficulty && (
-                          <span className="px-2 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded-lg text-xs font-medium capitalize">
+                          <span className="px-2 py-1 bg-primary/10 text-primary rounded-lg text-xs font-medium capitalize">
                             {recipe.difficulty}
                           </span>
                         )}
                       </div>
 
-                      <div className="space-y-1 text-sm text-slate-600 dark:text-slate-400">
+                      <div className="space-y-1 text-sm text-muted-foreground">
                         {recipe.timeMins && (
                           <div>⏱️ {recipe.timeMins} min</div>
                         )}
@@ -237,7 +237,7 @@ export default function RecipesPage() {
                           <div>🥑 {recipe.fatG}g fat</div>
                         )}
                         {recipe.estimatedPrice && (
-                          <div className="font-semibold text-slate-900 dark:text-white">
+                          <div className="font-semibold text-foreground">
                             💰 ${recipe.estimatedPrice.toFixed(2)}
                           </div>
                         )}
