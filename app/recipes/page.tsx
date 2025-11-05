@@ -117,6 +117,9 @@ export default function RecipesPage() {
           <div className="flex justify-between items-center flex-wrap gap-4">
             <h2 className="text-2xl font-bold text-foreground">Browse Recipes</h2>
             <div className="flex gap-4 flex-wrap">
+              <Link href="/recipes/import">
+                <Button variant="outline">🔗 Import from URL</Button>
+              </Link>
               <Button onClick={() => setYoutubeModalOpen(true)} variant="outline">
                 📹 Import from YouTube
               </Button>
