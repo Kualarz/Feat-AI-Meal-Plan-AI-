@@ -51,10 +51,10 @@ export async function POST(request: NextRequest) {
     let plan = await prisma.plan.findFirst({
       where: {
         // If you have user auth, add: userId: currentUserId
-        startDate: {
+        weekStart: {
           lte: new Date(dayISO),
         },
-        endDate: {
+        weekEnd: {
           gte: new Date(dayISO),
         },
       },
@@ -62,16 +62,15 @@ export async function POST(request: NextRequest) {
 
     // If no plan exists for this date, create one (7-day plan starting from this date)
     if (!plan) {
-      const startDate = new Date(dayISO);
-      const endDate = new Date(dayISO);
-      endDate.setDate(endDate.getDate() + 6);
+      const weekStart = new Date(dayISO);
+      const weekEnd = new Date(dayISO);
+      weekEnd.setDate(weekEnd.getDate() + 6);
 
       plan = await prisma.plan.create({
         data: {
-          startDate,
-          endDate,
-          notes: `Plan created on ${new Date().toLocaleDateString()}`,
-          // If you have user auth: userId: currentUserId
+          weekStart,
+          weekEnd,
+          userId: 'default-user',
         },
       });
     }
@@ -80,7 +79,7 @@ export async function POST(request: NextRequest) {
     const existingMeal = await prisma.planMeal.findFirst({
       where: {
         planId: plan.id,
-        dayISO,
+        dateISO: dayISO,
         slot,
       },
     });
@@ -105,7 +104,7 @@ export async function POST(request: NextRequest) {
       data: {
         planId: plan.id,
         recipeId,
-        dayISO,
+        dateISO: dayISO,
         slot,
       },
       include: {
