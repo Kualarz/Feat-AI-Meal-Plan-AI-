@@ -2,17 +2,86 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Light mode (default) */
 :root {
-  --background: #fafafa;
-  --foreground: #0f172a;
+  /* Background and text */
+  --background: 0 0% 100%;
+  --foreground: 222.2 47.4% 11.2%;
+
+  /* Cards */
+  --card: 0 0% 100%;
+  --card-foreground: 222.2 47.4% 11.2%;
+
+  /* Borders */
+  --border: 214.3 31.8% 91.4%;
+
+  /* Muted/secondary elements */
+  --muted: 210 40% 96.1%;
+  --muted-foreground: 215.4 16.3% 46.9%;
+
+  /* Primary (Emerald green for Feast AI) */
+  --primary: 134 61.2% 41.2%;
+  --primary-foreground: 0 0% 100%;
+
+  /* Success (Green) */
+  --success: 142 72% 29%;
+  --success-foreground: 0 0% 100%;
+
+  /* Warning (Amber) */
+  --warning: 38 92% 50%;
+  --warning-foreground: 0 0% 100%;
+
+  /* Destructive (Red) */
+  --destructive: 0 84.2% 60.2%;
+  --destructive-foreground: 0 0% 100%;
 }
 
-body {
-  color: var(--foreground);
-  background: var(--background);
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen",
-    "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue",
-    sans-serif;
+/* Dark mode */
+.dark {
+  /* Background and text - Dark slate */
+  --background: 222.2 84% 4.9%;
+  --foreground: 210 40% 98%;
+
+  /* Cards - Slightly lighter dark */
+  --card: 222.2 84% 4.9%;
+  --card-foreground: 210 40% 98%;
+
+  /* Borders - Dark grey */
+  --border: 217.2 32.6% 17.5%;
+
+  /* Muted/secondary - Dark grey */
+  --muted: 217.2 32.6% 17.5%;
+  --muted-foreground: 215 20.2% 65.1%;
+
+  /* Primary (Brighter emerald for dark) */
+  --primary: 134 65% 50%;
+  --primary-foreground: 0 0% 100%;
+
+  /* Success (Brighter green for dark) */
+  --success: 142 76% 36%;
+  --success-foreground: 0 0% 100%;
+
+  /* Warning (Brighter amber for dark) */
+  --warning: 38 92% 56%;
+  --warning-foreground: 0 0% 100%;
+
+  /* Destructive (Brighter red for dark) */
+  --destructive: 0 86% 66%;
+  --destructive-foreground: 0 0% 100%;
+}
+
+@layer base {
+  body {
+    @apply bg-background text-foreground;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen",
+      "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue",
+      sans-serif;
+  }
+
+  /* Ensure html has no margin/padding */
+  html {
+    @apply scroll-smooth;
+  }
 }
 
 @layer utilities {

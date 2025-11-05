@@ -1,78 +1,201 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/lib/db';
+import { NextResponse } from 'next/server';
 
-export async function GET(request: NextRequest) {
+const sampleRecipes = [
+  {
+    id: '1',
+    title: 'Pad Thai (Stir-Fried Noodles)',
+    description: 'Classic Thai stir-fried rice noodles with shrimp, tofu, and fresh vegetables',
+    cuisine: 'Thai',
+    difficulty: 'medium',
+    timeMins: 20,
+    estimatedPrice: 2.50,
+    currency: 'USD',
+    kcal: 450,
+    proteinG: 18,
+    carbsG: 52,
+    fatG: 18,
+    fiberG: 3,
+    sugarG: 4,
+    sodiumMg: 890,
+    imageUrl: 'https://images.unsplash.com/photo-1626082927389-6cd097cdc72e?w=400&h=300&fit=crop',
+    dietTags: 'gluten-free,vegan-option',
+  },
+  {
+    id: '2',
+    title: 'Pho Bo (Beef Noodle Soup)',
+    description: 'Aromatic Vietnamese beef broth with rice noodles and fresh herbs',
+    cuisine: 'Vietnamese',
+    difficulty: 'medium',
+    timeMins: 45,
+    estimatedPrice: 3.00,
+    currency: 'USD',
+    kcal: 380,
+    proteinG: 22,
+    carbsG: 42,
+    fatG: 12,
+    fiberG: 2,
+    sugarG: 3,
+    sodiumMg: 1200,
+    imageUrl: 'https://images.unsplash.com/photo-1612874742237-415a06e44efb?w=400&h=300&fit=crop',
+    dietTags: 'high-protein',
+  },
+  {
+    id: '3',
+    title: 'Som Tam (Papaya Salad)',
+    description: 'Spicy and tangy green papaya salad with lime, chili, and peanuts',
+    cuisine: 'Thai',
+    difficulty: 'easy',
+    timeMins: 10,
+    estimatedPrice: 1.50,
+    currency: 'USD',
+    kcal: 220,
+    proteinG: 8,
+    carbsG: 18,
+    fatG: 14,
+    fiberG: 4,
+    sugarG: 8,
+    sodiumMg: 450,
+    imageUrl: 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=400&h=300&fit=crop',
+    dietTags: 'vegan,low-carb',
+  },
+  {
+    id: '4',
+    title: 'Khao Pad (Fried Rice)',
+    description: 'Thai-style fried rice with jasmine rice, eggs, and vegetables',
+    cuisine: 'Thai',
+    difficulty: 'easy',
+    timeMins: 15,
+    estimatedPrice: 2.00,
+    currency: 'USD',
+    kcal: 420,
+    proteinG: 14,
+    carbsG: 48,
+    fatG: 16,
+    fiberG: 2,
+    sugarG: 2,
+    sodiumMg: 720,
+    imageUrl: 'https://images.unsplash.com/photo-1603894542802-f1dbc86e6461?w=400&h=300&fit=crop',
+    dietTags: 'vegetarian-option',
+  },
+  {
+    id: '5',
+    title: 'Goi Cuon (Spring Rolls)',
+    description: 'Fresh Vietnamese spring rolls with peanut sauce',
+    cuisine: 'Vietnamese',
+    difficulty: 'easy',
+    timeMins: 20,
+    estimatedPrice: 2.25,
+    currency: 'USD',
+    kcal: 280,
+    proteinG: 10,
+    carbsG: 32,
+    fatG: 11,
+    fiberG: 2,
+    sugarG: 4,
+    sodiumMg: 380,
+    imageUrl: 'https://images.unsplash.com/photo-1571407388087-71c66d90cd0c?w=400&h=300&fit=crop',
+    dietTags: 'vegetarian,gluten-free',
+  },
+  {
+    id: '6',
+    title: 'Massaman Curry',
+    description: 'Rich and aromatic Thai curry with beef and peanuts',
+    cuisine: 'Thai',
+    difficulty: 'hard',
+    timeMins: 60,
+    estimatedPrice: 4.50,
+    currency: 'USD',
+    kcal: 520,
+    proteinG: 28,
+    carbsG: 35,
+    fatG: 28,
+    fiberG: 3,
+    sugarG: 6,
+    sodiumMg: 980,
+    imageUrl: 'https://images.unsplash.com/photo-1455619452474-d2be8b1e4e31?w=400&h=300&fit=crop',
+    dietTags: 'gluten-free',
+  },
+  {
+    id: '7',
+    title: 'Banh Mi (Vietnamese Sandwich)',
+    description: 'Vietnamese baguette sandwich with pickled vegetables and protein',
+    cuisine: 'Vietnamese',
+    difficulty: 'easy',
+    timeMins: 15,
+    estimatedPrice: 2.75,
+    currency: 'USD',
+    kcal: 380,
+    proteinG: 16,
+    carbsG: 44,
+    fatG: 14,
+    fiberG: 2,
+    sugarG: 5,
+    sodiumMg: 840,
+    imageUrl: 'https://images.unsplash.com/photo-1555939594-58d7cb561231?w=400&h=300&fit=crop',
+    dietTags: 'versatile',
+  },
+  {
+    id: '8',
+    title: 'Buddha Bowl',
+    description: 'Nutritious bowl with quinoa, roasted vegetables, and tahini dressing',
+    cuisine: 'American',
+    difficulty: 'easy',
+    timeMins: 25,
+    estimatedPrice: 3.50,
+    currency: 'USD',
+    kcal: 420,
+    proteinG: 15,
+    carbsG: 48,
+    fatG: 16,
+    fiberG: 8,
+    sugarG: 6,
+    sodiumMg: 280,
+    imageUrl: 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=400&h=300&fit=crop',
+    dietTags: 'vegan,high-fiber,gluten-free',
+  },
+  {
+    id: '9',
+    title: 'Grilled Salmon with Asparagus',
+    description: 'Omega-3 rich salmon with roasted asparagus and lemon butter',
+    cuisine: 'American',
+    difficulty: 'medium',
+    timeMins: 30,
+    estimatedPrice: 5.00,
+    currency: 'USD',
+    kcal: 480,
+    proteinG: 38,
+    carbsG: 8,
+    fatG: 32,
+    fiberG: 2,
+    sugarG: 1,
+    sodiumMg: 420,
+    imageUrl: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400&h=300&fit=crop',
+    dietTags: 'high-protein,keto-friendly',
+  },
+  {
+    id: '10',
+    title: 'Laksa (Spicy Noodle Soup)',
+    description: 'Malaysian spicy coconut milk-based noodle soup with seafood',
+    cuisine: 'Malaysian',
+    difficulty: 'hard',
+    timeMins: 50,
+    estimatedPrice: 3.75,
+    currency: 'USD',
+    kcal: 450,
+    proteinG: 20,
+    carbsG: 40,
+    fatG: 20,
+    fiberG: 3,
+    sugarG: 4,
+    sodiumMg: 1050,
+    imageUrl: 'https://images.unsplash.com/photo-1618164436241-4473940571cd?w=400&h=300&fit=crop',
+    dietTags: 'seafood',
+  },
+];
+
+export async function GET() {
   try {
-    const { searchParams } = new URL(request.url);
-    const q = searchParams.get('q') || '';
-    const cuisine = searchParams.get('cuisine') || '';
-    const diet = searchParams.get('diet') || '';
-    const maxTime = searchParams.get('maxTime');
-    const maxPrice = searchParams.get('maxPrice');
-    const tags = searchParams.get('tags') || '';
-    const page = parseInt(searchParams.get('page') || '1');
-    const limit = parseInt(searchParams.get('limit') || '20');
-
-    const where: any = {};
-
-    if (q) {
-      where.OR = [
-        { title: { contains: q, mode: 'insensitive' } },
-        { description: { contains: q, mode: 'insensitive' } },
-      ];
-    }
-
-    if (cuisine) {
-      where.cuisine = { contains: cuisine, mode: 'insensitive' };
-    }
-
-    if (diet) {
-      where.dietTags = { contains: diet, mode: 'insensitive' };
-    }
-
-    if (maxTime) {
-      where.timeMins = { lte: parseInt(maxTime) };
-    }
-
-    if (maxPrice) {
-      where.estimatedPrice = { lte: parseFloat(maxPrice) };
-    }
-
-    if (tags) {
-      where.tags = { contains: tags, mode: 'insensitive' };
-    }
-
-    const [recipes, total] = await Promise.all([
-      db.recipe.findMany({
-        where,
-        orderBy: { createdAt: 'desc' },
-        skip: (page - 1) * limit,
-        take: limit,
-        select: {
-          id: true,
-          title: true,
-          description: true,
-          cuisine: true,
-          dietTags: true,
-          difficulty: true,
-          timeMins: true,
-          estimatedPrice: true,
-          currency: true,
-          kcal: true,
-          proteinG: true,
-          imageUrl: true,
-          tags: true,
-        },
-      }),
-      db.recipe.count({ where }),
-    ]);
-
-    return NextResponse.json({
-      recipes,
-      total,
-      page,
-      totalPages: Math.ceil(total / limit),
-    });
+    return NextResponse.json(sampleRecipes);
   } catch (error) {
     console.error('Error fetching recipes:', error);
     return NextResponse.json(

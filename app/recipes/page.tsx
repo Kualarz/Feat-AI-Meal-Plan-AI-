@@ -6,6 +6,7 @@ import { Button } from '@/components/Button';
 import { Input } from '@/components/Input';
 import { Select } from '@/components/Select';
 import { Card } from '@/components/Card';
+import { Navbar } from '@/components/Navbar';
 
 interface Recipe {
   id: string;
@@ -19,12 +20,15 @@ interface Recipe {
   currency: string | null;
   kcal: number | null;
   proteinG: number | null;
+  carbsG?: number | null;
+  fatG?: number | null;
   imageUrl: string | null;
   tags: string | null;
 }
 
 export default function RecipesPage() {
   const [recipes, setRecipes] = useState<Recipe[]>([]);
+  const [filteredRecipes, setFilteredRecipes] = useState<Recipe[]>([]);
   const [loading, setLoading] = useState(true);
   const [filters, setFilters] = useState({
     q: '',
@@ -38,17 +42,16 @@ export default function RecipesPage() {
     loadRecipes();
   }, []);
 
+  useEffect(() => {
+    applyFilters();
+  }, [recipes, filters]);
+
   const loadRecipes = async () => {
     setLoading(true);
     try {
-      const params = new URLSearchParams();
-      Object.entries(filters).forEach(([key, value]) => {
-        if (value) params.append(key, value);
-      });
-
-      const response = await fetch(`/api/recipes?${params}`);
+      const response = await fetch(`/api/recipes`);
       const data = await response.json();
-      setRecipes(data.recipes);
+      setRecipes(Array.isArray(data) ? data : data.recipes || []);
     } catch (error) {
       console.error('Error loading recipes:', error);
     } finally {
@@ -66,15 +69,38 @@ export default function RecipesPage() {
   };
 
   const applyFilters = () => {
-    loadRecipes();
+    let filtered = recipes;
+
+    if (filters.q) {
+      filtered = filtered.filter((r) =>
+        r.title.toLowerCase().includes(filters.q.toLowerCase()) ||
+        r.description?.toLowerCase().includes(filters.q.toLowerCase())
+      );
+    }
+
+    if (filters.cuisine) {
+      filtered = filtered.filter((r) => r.cuisine === filters.cuisine);
+    }
+
+    if (filters.maxTime) {
+      filtered = filtered.filter((r) => r.timeMins && r.timeMins <= Number(filters.maxTime));
+    }
+
+    if (filters.maxPrice) {
+      filtered = filtered.filter((r) => r.estimatedPrice && r.estimatedPrice <= Number(filters.maxPrice));
+    }
+
+    setFilteredRecipes(filtered);
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
-      <nav className="bg-white border-b border-slate-200">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800">
+      <Navbar />
+
+      <div className="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700">
         <div className="max-w-7xl mx-auto px-4 py-4">
           <div className="flex justify-between items-center">
-            <h1 className="text-2xl font-bold text-slate-900">eatr-vibe</h1>
+            <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Browse Recipes</h2>
             <div className="flex gap-4">
               <Link href="/planner">
                 <Button variant="outline">Planner</Button>
@@ -83,19 +109,19 @@ export default function RecipesPage() {
                 <Button variant="outline">Groceries</Button>
               </Link>
               <Link href="/setup">
-                <Button variant="secondary">Settings</Button>
+                <Button variant="outline">Settings</Button>
               </Link>
             </div>
           </div>
         </div>
-      </nav>
+      </div>
 
       <div className="max-w-7xl mx-auto px-4 py-8">
         <div className="flex gap-8">
           {/* Filters Sidebar */}
           <aside className="hidden md:block w-64 flex-shrink-0">
             <Card>
-              <h2 className="text-lg font-semibold text-slate-900 mb-4">
+              <h2 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">
                 Filters
               </h2>
 
@@ -116,25 +142,10 @@ export default function RecipesPage() {
                   onChange={handleFilterChange}
                   options={[
                     { value: '', label: 'All Cuisines' },
-                    { value: 'Cambodian', label: 'Cambodian' },
                     { value: 'Thai', label: 'Thai' },
                     { value: 'Vietnamese', label: 'Vietnamese' },
                     { value: 'Malaysian', label: 'Malaysian' },
-                    { value: 'Indonesian', label: 'Indonesian' },
-                  ]}
-                />
-
-                <Select
-                  label="Diet"
-                  name="diet"
-                  value={filters.diet}
-                  onChange={handleFilterChange}
-                  options={[
-                    { value: '', label: 'All Diets' },
-                    { value: 'vegetarian', label: 'Vegetarian' },
-                    { value: 'vegan', label: 'Vegan' },
-                    { value: 'halal', label: 'Halal' },
-                    { value: 'pescatarian', label: 'Pescatarian' },
+                    { value: 'American', label: 'American' },
                   ]}
                 />
 
@@ -148,54 +159,40 @@ export default function RecipesPage() {
                 />
 
                 <Input
-                  label="Max Price"
+                  label="Max Price ($)"
                   type="number"
                   name="maxPrice"
                   value={filters.maxPrice}
                   onChange={handleFilterChange}
-                  placeholder="e.g., 50000"
+                  placeholder="e.g., 5"
                 />
-
-                <Button
-                  variant="primary"
-                  onClick={applyFilters}
-                  className="w-full"
-                >
-                  Apply Filters
-                </Button>
               </div>
             </Card>
           </aside>
 
           {/* Recipes Grid */}
           <div className="flex-1">
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-3xl font-bold text-slate-900">
-                Browse Recipes
-              </h2>
-            </div>
-
             {loading ? (
-              <div className="text-center py-12 text-slate-600">
+              <div className="text-center py-12 text-slate-600 dark:text-slate-400">
                 Loading recipes...
               </div>
-            ) : recipes.length === 0 ? (
+            ) : filteredRecipes.length === 0 ? (
               <Card className="text-center py-12">
                 <div className="text-6xl mb-4">🍜</div>
-                <h3 className="text-xl font-semibold text-slate-900 mb-2">
+                <h3 className="text-xl font-semibold text-slate-900 dark:text-white mb-2">
                   No recipes found
                 </h3>
-                <p className="text-slate-600">
-                  Try generating a meal plan to create some recipes
+                <p className="text-slate-600 dark:text-slate-400">
+                  Try adjusting your filters
                 </p>
               </Card>
             ) : (
               <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                {recipes.map((recipe) => (
+                {filteredRecipes.map((recipe) => (
                   <Link key={recipe.id} href={`/recipes/${recipe.id}`}>
                     <Card className="h-full hover:shadow-lg transition-shadow cursor-pointer">
                       {recipe.imageUrl && (
-                        <div className="w-full h-48 bg-slate-200 rounded-xl mb-4 overflow-hidden">
+                        <div className="w-full h-48 bg-slate-200 dark:bg-slate-700 rounded-xl mb-4 overflow-hidden">
                           <img
                             src={recipe.imageUrl}
                             alt={recipe.title}
@@ -203,32 +200,29 @@ export default function RecipesPage() {
                           />
                         </div>
                       )}
-                      <h3 className="font-semibold text-slate-900 mb-2">
+                      <h3 className="font-semibold text-slate-900 dark:text-white mb-2">
                         {recipe.title}
                       </h3>
                       {recipe.description && (
-                        <p className="text-sm text-slate-600 mb-3 line-clamp-2">
+                        <p className="text-sm text-slate-600 dark:text-slate-400 mb-3 line-clamp-2">
                           {recipe.description}
                         </p>
                       )}
 
                       <div className="flex flex-wrap gap-2 mb-3">
                         {recipe.cuisine && (
-                          <span className="px-2 py-1 bg-emerald-100 text-emerald-700 rounded-lg text-xs font-medium">
+                          <span className="px-2 py-1 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 rounded-lg text-xs font-medium">
                             {recipe.cuisine}
                           </span>
                         )}
-                        {recipe.dietTags?.split(',').map((tag) => (
-                          <span
-                            key={tag}
-                            className="px-2 py-1 bg-blue-100 text-blue-700 rounded-lg text-xs font-medium"
-                          >
-                            {tag.trim()}
+                        {recipe.difficulty && (
+                          <span className="px-2 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded-lg text-xs font-medium capitalize">
+                            {recipe.difficulty}
                           </span>
-                        ))}
+                        )}
                       </div>
 
-                      <div className="space-y-1 text-sm text-slate-600">
+                      <div className="space-y-1 text-sm text-slate-600 dark:text-slate-400">
                         {recipe.timeMins && (
                           <div>⏱️ {recipe.timeMins} min</div>
                         )}
@@ -236,9 +230,15 @@ export default function RecipesPage() {
                         {recipe.proteinG && (
                           <div>💪 {recipe.proteinG}g protein</div>
                         )}
+                        {recipe.carbsG && (
+                          <div>🍚 {recipe.carbsG}g carbs</div>
+                        )}
+                        {recipe.fatG && (
+                          <div>🥑 {recipe.fatG}g fat</div>
+                        )}
                         {recipe.estimatedPrice && (
-                          <div>
-                            💰 {recipe.estimatedPrice} {recipe.currency}
+                          <div className="font-semibold text-slate-900 dark:text-white">
+                            💰 ${recipe.estimatedPrice.toFixed(2)}
                           </div>
                         )}
                       </div>

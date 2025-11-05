@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import { ThemeProvider } from "@/components/ThemeProvider";
 
 export const metadata: Metadata = {
-  title: "eatr-vibe | AI Meal Plan & Recipe",
-  description: "Plan SEA-friendly meals with AI",
+  title: "Feast AI | AI Meal Plan & Nutrition Optimization",
+  description: "Create personalized meal plans with AI-powered nutrition optimization",
 };
 
 export default function RootLayout({
@@ -12,8 +13,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body className="antialiased">{children}</body>
+    <html lang="en" suppressHydrationWarning>
+      <body className="antialiased bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-50">
+        <ThemeProvider>{children}</ThemeProvider>
+      </body>
     </html>
   );
 }
