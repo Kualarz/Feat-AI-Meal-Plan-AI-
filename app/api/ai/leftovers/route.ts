@@ -1,32 +1,42 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { generateLeftoverRecipes } from '@/lib/ai-leftovers';
+import { ErrorMessages, createErrorResponse, handleAPIError } from '@/lib/api-errors';
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
-    const { ingredients, currency } = body as {
-      ingredients: string[];
-      currency?: string;
-    };
-
-    if (!ingredients || !Array.isArray(ingredients) || ingredients.length === 0) {
+    // Validate request body
+    let body: { ingredients?: unknown; currency?: string };
+    try {
+      body = await request.json();
+    } catch {
       return NextResponse.json(
-        { error: 'Please provide at least one leftover ingredient' },
+        createErrorResponse(400, ErrorMessages.INVALID_JSON),
         { status: 400 }
       );
     }
 
+    const { ingredients, currency } = body;
+
+    // Validate ingredients array
+    if (!ingredients || !Array.isArray(ingredients) || ingredients.length === 0) {
+      return NextResponse.json(
+        createErrorResponse(400, ErrorMessages.AI_LEFTOVERS_EMPTY),
+        { status: 400 }
+      );
+    }
+
+    // Validate API key
     const apiKey = process.env.ANTHROPIC_API_KEY;
     if (!apiKey) {
-      console.error('ANTHROPIC_API_KEY not set');
+      console.error('[AI Leftovers] ANTHROPIC_API_KEY not configured');
       return NextResponse.json(
-        { error: 'AI service not configured. Please set ANTHROPIC_API_KEY.' },
+        createErrorResponse(500, ErrorMessages.AI_NO_API_KEY),
         { status: 500 }
       );
     }
 
     // Generate recipe suggestions
-    console.log('Generating recipe suggestions for leftovers:', ingredients);
+    console.log('[AI Leftovers] Generating suggestions for:', ingredients);
     const recipes = await generateLeftoverRecipes(
       ingredients,
       currency || 'USD'
@@ -40,26 +50,11 @@ export async function POST(request: NextRequest) {
       { status: 200 }
     );
   } catch (error) {
-    console.error('Error generating leftover recipes:', error);
-
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-
-    if (errorMessage.includes('API key')) {
-      return NextResponse.json(
-        {
-          error: 'AI service not properly configured',
-          details: 'Missing or invalid Anthropic API key',
-        },
-        { status: 500 }
-      );
-    }
-
-    return NextResponse.json(
-      {
-        error: 'Failed to generate recipe suggestions',
-        details: errorMessage,
-      },
-      { status: 500 }
+    const { statusCode, response } = handleAPIError(
+      error,
+      'Failed to generate recipe suggestions'
     );
+
+    return NextResponse.json(response, { status: statusCode });
   }
 }

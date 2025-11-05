@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
 import { aggregateIngredients } from '@/lib/groceries';
+import { ErrorMessages, createErrorResponse, handleAPIError } from '@/lib/api-errors';
 
 const prisma = new PrismaClient();
 
@@ -9,8 +10,12 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const planId = searchParams.get('planId');
 
+    // Validate planId parameter
     if (!planId) {
-      return NextResponse.json({ error: 'planId is required' }, { status: 400 });
+      return NextResponse.json(
+        createErrorResponse(400, ErrorMessages.GROCERY_PLAN_REQUIRED),
+        { status: 400 }
+      );
     }
 
     // Fetch the plan with all meals and recipes
@@ -25,24 +30,31 @@ export async function GET(request: NextRequest) {
       },
     });
 
+    // Handle plan not found
     if (!plan) {
-      return NextResponse.json({ error: 'Plan not found' }, { status: 404 });
+      return NextResponse.json(
+        createErrorResponse(404, ErrorMessages.PLAN_NOT_FOUND),
+        { status: 404 }
+      );
     }
 
     // Filter out meals without recipes
     const mealsWithRecipes = plan.meals.filter((meal) => meal.recipe);
 
+    // Return empty groceries list if no meals have recipes
     if (mealsWithRecipes.length === 0) {
+      console.log(`[Groceries] No meals with recipes found for plan ${planId}`);
       return NextResponse.json(
         {
           success: true,
           planId,
           planDates: {
-            weekStart: plan.weekStart,
-            weekEnd: plan.weekEnd,
+            weekStart: plan.weekStart.toISOString(),
+            weekEnd: plan.weekEnd.toISOString(),
           },
           ingredients: [],
           totalMeals: 0,
+          message: 'No recipes added to this meal plan yet',
         },
         { status: 200 }
       );
@@ -60,8 +72,8 @@ export async function GET(request: NextRequest) {
         success: true,
         planId,
         planDates: {
-          weekStart: plan.weekStart,
-          weekEnd: plan.weekEnd,
+          weekStart: plan.weekStart.toISOString(),
+          weekEnd: plan.weekEnd.toISOString(),
         },
         ingredients: aggregated,
         totalMeals: mealsWithRecipes.length,
@@ -69,10 +81,11 @@ export async function GET(request: NextRequest) {
       { status: 200 }
     );
   } catch (error) {
-    console.error('Error fetching groceries:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch groceries' },
-      { status: 500 }
+    const { statusCode, response } = handleAPIError(
+      error,
+      'Failed to fetch groceries'
     );
+
+    return NextResponse.json(response, { status: statusCode });
   }
 }
