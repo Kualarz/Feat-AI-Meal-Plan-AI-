@@ -40,6 +40,9 @@ export default function RecipesPage() {
     cuisine: '',
     difficulty: '',
     diet: '',
+    vegetarian: false,
+    vegan: false,
+    halal: false,
     maxTime: '',
     maxPrice: '',
   });
@@ -79,6 +82,13 @@ export default function RecipesPage() {
     }));
   };
 
+  const handleDietToggle = (dietType: 'vegetarian' | 'vegan' | 'halal') => {
+    setFilters((prev) => ({
+      ...prev,
+      [dietType]: !prev[dietType],
+    }));
+  };
+
   const applyFilters = () => {
     let filtered = recipes;
 
@@ -95,6 +105,24 @@ export default function RecipesPage() {
 
     if (filters.difficulty) {
       filtered = filtered.filter((r) => r.difficulty === filters.difficulty);
+    }
+
+    if (filters.vegetarian) {
+      filtered = filtered.filter((r) =>
+        r.dietTags && r.dietTags.toLowerCase().includes('vegetarian')
+      );
+    }
+
+    if (filters.vegan) {
+      filtered = filtered.filter((r) =>
+        r.dietTags && r.dietTags.toLowerCase().includes('vegan')
+      );
+    }
+
+    if (filters.halal) {
+      filtered = filtered.filter((r) =>
+        r.dietTags && r.dietTags.toLowerCase().includes('halal')
+      );
     }
 
     if (filters.maxTime) {
@@ -192,6 +220,42 @@ export default function RecipesPage() {
                     { value: 'hard', label: 'Hard' },
                   ]}
                 />
+
+                {/* Dietary Preferences */}
+                <div className="border-t border-border pt-4">
+                  <p className="text-sm font-semibold text-foreground mb-3">Dietary Preferences</p>
+                  <div className="space-y-2">
+                    <label className="flex items-center gap-2 cursor-pointer p-2 rounded hover:bg-muted">
+                      <input
+                        type="checkbox"
+                        checked={filters.vegetarian}
+                        onChange={() => handleDietToggle('vegetarian')}
+                        className="w-4 h-4 rounded border-border text-primary"
+                      />
+                      <span className="text-sm text-foreground">🥦 Vegetarian</span>
+                    </label>
+
+                    <label className="flex items-center gap-2 cursor-pointer p-2 rounded hover:bg-muted">
+                      <input
+                        type="checkbox"
+                        checked={filters.vegan}
+                        onChange={() => handleDietToggle('vegan')}
+                        className="w-4 h-4 rounded border-border text-primary"
+                      />
+                      <span className="text-sm text-foreground">🌿 Vegan</span>
+                    </label>
+
+                    <label className="flex items-center gap-2 cursor-pointer p-2 rounded hover:bg-muted">
+                      <input
+                        type="checkbox"
+                        checked={filters.halal}
+                        onChange={() => handleDietToggle('halal')}
+                        className="w-4 h-4 rounded border-border text-primary"
+                      />
+                      <span className="text-sm text-foreground">🕌 Halal</span>
+                    </label>
+                  </div>
+                </div>
 
                 <Input
                   label="Max Time (minutes)"
