@@ -93,6 +93,13 @@ export default function PlannerPage() {
         region: preferences.region || 'KH',
         currency: preferences.currency || 'KHR',
         budget: preferences.budgetLevel || 'medium',
+        // Weight goal and body metrics
+        currentWeight: preferences.currentWeight,
+        targetWeight: preferences.targetWeight,
+        height: preferences.height,
+        age: preferences.age,
+        weightGoal: preferences.weightGoal,
+        activityLevel: preferences.activityLevel,
       };
 
       const range = {

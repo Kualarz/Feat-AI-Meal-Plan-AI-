@@ -6,7 +6,7 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
@@ -25,7 +25,7 @@ model Preference {
   user                User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   caloriesTarget      Int?
   proteinTarget       Int?
-  diet                String   // balanced, vegetarian, vegan, pescatarian, keto
+  diet                String   // See app/setup/page.tsx for full list of diet options
   halalEnabled        Boolean  @default(false)
   vegetarianEnabled   Boolean  @default(false)
   veganEnabled        Boolean  @default(false)
@@ -37,6 +37,13 @@ model Preference {
   equipment           String?  // CSV
   region              String?  // e.g. KH, AU
   currency            String?  // e.g. KHR, AUD
+  // Weight goal fields
+  currentWeight       Float?   // in kg
+  targetWeight        Float?   // in kg
+  weightGoal          String?  // maintain, lose, gain, bulk (lose, gain, bulk, maintain)
+  height              Float?   // in cm
+  age                 Int?     // in years
+  activityLevel       String?  // sedentary, light, moderate, active, veryActive
   updatedAt           DateTime @updatedAt
 }
 

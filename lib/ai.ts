@@ -16,6 +16,13 @@ export interface ProfileInput {
   region: string;
   currency: string;
   budget: string;
+  // Weight goal and body metrics
+  currentWeight?: number; // kg
+  targetWeight?: number; // kg
+  height?: number; // cm
+  age?: number;
+  weightGoal?: 'maintain' | 'lose' | 'gain' | 'bulk';
+  activityLevel?: 'sedentary' | 'light' | 'moderate' | 'active' | 'veryActive';
 }
 
 export interface DateRange {
@@ -146,6 +153,27 @@ export async function generateMealPlan(
   profile: ProfileInput,
   range: DateRange
 ): Promise<MealPlanJson> {
+  // Build weight goal section if provided
+  let weightGoalSection = '';
+  if (profile.weightGoal) {
+    const goalDescriptions: Record<string, string> = {
+      maintain: 'Maintain current weight - focus on balanced, sustainable nutrition',
+      lose: 'Lose weight gradually - include nutrient-dense foods to feel full longer',
+      gain: 'Gain weight healthily - focus on calorie-dense foods with good nutrition',
+      bulk: 'Build muscle mass - prioritize protein-rich foods to support muscle growth',
+    };
+
+    weightGoalSection = `
+WEIGHT GOAL & BODY METRICS:
+- Current weight: ${profile.currentWeight}kg
+- Target weight: ${profile.targetWeight}kg
+- Height: ${profile.height}cm
+- Age: ${profile.age}
+- Activity level: ${profile.activityLevel || 'moderate'}
+- Goal: ${profile.weightGoal} (${goalDescriptions[profile.weightGoal]})
+- These calorie and protein targets are optimized for this goal.`;
+  }
+
   const userMessage = `Generate a ${getDayCount(range.startISO, range.endISO)}-day meal plan with these requirements:
 
 PROFILE:
@@ -163,7 +191,7 @@ PROFILE:
 - Budget level: ${profile.budget}
 - Available equipment: ${profile.equipment}
 - Region: ${profile.region}
-- Currency: ${profile.currency}
+- Currency: ${profile.currency}${weightGoalSection}
 
 DATE RANGE: ${range.startISO} to ${range.endISO}
 

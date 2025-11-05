@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { getNutritionSummary } from '@/lib/nutrition';
 
 const DEFAULT_USER_ID = 'default-user';
 
@@ -37,6 +38,12 @@ export async function GET() {
         equipment: 'stovetop,rice cooker',
         region: 'KH',
         currency: 'KHR',
+        currentWeight: 70,
+        targetWeight: 70,
+        weightGoal: 'maintain',
+        height: 170,
+        age: 30,
+        activityLevel: 'moderate',
       });
     }
 
@@ -69,11 +76,35 @@ export async function POST(request: NextRequest) {
       where: { userId: DEFAULT_USER_ID },
     });
 
+    // Calculate optimal nutrition targets if weight goal data is provided
+    let caloriesTarget = body.caloriesTarget || 2000;
+    let proteinTarget = body.proteinTarget || 120;
+
+    if (
+      body.currentWeight &&
+      body.height &&
+      body.age &&
+      body.weightGoal &&
+      body.activityLevel
+    ) {
+      const nutritionSummary = getNutritionSummary({
+        currentWeight: body.currentWeight,
+        height: body.height,
+        age: body.age,
+        activityLevel: body.activityLevel,
+        weightGoal: body.weightGoal,
+        targetWeight: body.targetWeight,
+      });
+
+      caloriesTarget = nutritionSummary.targets.dailyCalories;
+      proteinTarget = nutritionSummary.targets.proteinG;
+    }
+
     const preference = await db.preference.create({
       data: {
         userId: DEFAULT_USER_ID,
-        caloriesTarget: body.caloriesTarget || 2000,
-        proteinTarget: body.proteinTarget || 120,
+        caloriesTarget,
+        proteinTarget,
         diet: body.diet || 'balanced',
         halalEnabled: body.halalEnabled || false,
         vegetarianEnabled: body.vegetarianEnabled || false,
@@ -86,6 +117,12 @@ export async function POST(request: NextRequest) {
         equipment: body.equipment || 'stovetop,rice cooker',
         region: body.region || 'KH',
         currency: body.currency || 'KHR',
+        currentWeight: body.currentWeight || 70,
+        targetWeight: body.targetWeight || 70,
+        weightGoal: body.weightGoal || 'maintain',
+        height: body.height || 170,
+        age: body.age || 30,
+        activityLevel: body.activityLevel || 'moderate',
       },
     });
 
