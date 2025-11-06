@@ -24,8 +24,10 @@ project/
 
 ### Unit Tests (Jest)
 
+Jest runs all unit and integration tests in `__tests__/` directory only. E2E tests are excluded from Jest configuration.
+
 ```bash
-# Run all tests
+# Run all unit tests
 npm test
 
 # Run tests in watch mode
@@ -38,24 +40,34 @@ npm test -- auth.test.ts
 npm test -- --coverage
 ```
 
+**Note**: Jest automatically ignores E2E tests in the `e2e/` folder.
+
 ### E2E Tests (Playwright)
 
+E2E tests are run with Playwright test runner and are kept separate from unit tests.
+
 ```bash
-# Run E2E tests (requires running dev server)
+# Run E2E tests (Playwright automatically starts dev server)
 npm run test:e2e
 
-# Run in headed mode (see browser)
+# Run in headed mode (see browser while testing)
 npm run test:e2e -- --headed
 
 # Run specific browser
 npm run test:e2e -- --project=chromium
 
-# Debug tests
+# Debug tests interactively
 npm run test:e2e -- --debug
 
-# View test report
+# View test report in HTML
 npm run test:e2e -- --reporter=html
 ```
+
+**Key Features**:
+- Automatically starts dev server (configured in `playwright.config.ts`)
+- Tests multiple browsers: Chromium, Firefox, WebKit
+- Mobile viewport testing included
+- Separate from Jest configuration - no conflicts
 
 ### All Tests
 
