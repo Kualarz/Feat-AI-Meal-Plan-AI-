@@ -7,6 +7,8 @@ import Image from 'next/image';
 import ReactMarkdown from 'react-markdown';
 import { Button } from '@/components/Button';
 import { Card } from '@/components/Card';
+import { Navbar } from '@/components/Navbar';
+import { MainNavigation } from '@/components/MainNavigation';
 import { AddToPlannerModal } from '@/components/AddToPlannerModal';
 
 interface Ingredient {
@@ -88,45 +90,35 @@ export default function RecipeDetailPage() {
   const ingredients: Ingredient[] = JSON.parse(recipe.ingredientsJson);
 
   return (
-    <div className="min-h-screen bg-background">
-      <nav className="bg-card border-b border-border">
-        <div className="max-w-7xl mx-auto px-4 py-4">
-          <div className="flex justify-between items-center">
-            <h1 className="text-2xl font-bold text-foreground">eatr-vibe</h1>
-            <div className="flex gap-4">
-              <Link href="/planner">
-                <Button variant="outline">Planner</Button>
-              </Link>
-              <Link href="/recipes">
-                <Button variant="outline">Recipes</Button>
-              </Link>
-              <Link href="/groceries">
-                <Button variant="outline">Groceries</Button>
-              </Link>
-            </div>
-          </div>
-        </div>
-      </nav>
+    <div className="min-h-screen bg-background flex flex-col">
+      <Navbar />
 
-      <div className="max-w-4xl mx-auto px-4 py-8">
-        <div className="flex gap-4 mb-6">
-          <Button
-            variant="outline"
-            onClick={() => router.back()}
-          >
-            ← Back
-          </Button>
-          {recipe && (
-            <Button
-              onClick={() => setPlannerModalOpen(true)}
-              className="flex-1"
-            >
-              📅 Add to Planner
-            </Button>
-          )}
-        </div>
+      <div className="flex flex-1 overflow-hidden">
+        {/* Sidebar Navigation */}
+        <MainNavigation className="hidden md:block w-64 overflow-y-auto" />
 
-        <Card>
+        {/* Main Content */}
+        <div className="flex-1 flex flex-col overflow-hidden">
+          <div className="flex-1 overflow-y-auto p-8">
+            <div className="max-w-4xl mx-auto w-full">
+              <div className="flex gap-4 mb-6">
+                <Button
+                  variant="outline"
+                  onClick={() => router.back()}
+                >
+                  ← Back
+                </Button>
+                {recipe && (
+                  <Button
+                    onClick={() => setPlannerModalOpen(true)}
+                    className="flex-1"
+                  >
+                    📅 Add to Planner
+                  </Button>
+                )}
+              </div>
+
+              <Card>
           {recipe.imageUrl && (
             <div className="w-full h-96 bg-muted rounded-xl mb-6 overflow-hidden relative">
               <Image
@@ -343,28 +335,31 @@ export default function RecipeDetailPage() {
           )}
         </Card>
 
-        {/* Success Message */}
-        {successMessage && (
-          <div className="fixed bottom-6 right-6 bg-success text-white px-6 py-3 rounded-lg shadow-lg animate-pulse">
-            {successMessage}
-          </div>
-        )}
+              {/* Success Message */}
+              {successMessage && (
+                <div className="fixed bottom-6 right-6 bg-success text-white px-6 py-3 rounded-lg shadow-lg animate-pulse">
+                  {successMessage}
+                </div>
+              )}
 
-        {/* Add to Planner Modal */}
-        {recipe && (
-          <AddToPlannerModal
-            isOpen={plannerModalOpen}
-            recipeId={recipe.id}
-            recipeName={recipe.title}
-            onClose={() => setPlannerModalOpen(false)}
-            onSuccess={(message) => {
-              setSuccessMessage(message);
-              setPlannerModalOpen(false);
-              // Clear success message after 3 seconds
-              setTimeout(() => setSuccessMessage(''), 3000);
-            }}
-          />
-        )}
+              {/* Add to Planner Modal */}
+              {recipe && (
+                <AddToPlannerModal
+                  isOpen={plannerModalOpen}
+                  recipeId={recipe.id}
+                  recipeName={recipe.title}
+                  onClose={() => setPlannerModalOpen(false)}
+                  onSuccess={(message) => {
+                    setSuccessMessage(message);
+                    setPlannerModalOpen(false);
+                    // Clear success message after 3 seconds
+                    setTimeout(() => setSuccessMessage(''), 3000);
+                  }}
+                />
+              )}
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
