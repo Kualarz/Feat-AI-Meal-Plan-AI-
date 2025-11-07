@@ -35,7 +35,7 @@ export default function HomePage() {
           </div>
         </div>
 
-        <div className="mt-24 grid md:grid-cols-3 gap-8">
+        <div className="mt-24 grid md:grid-cols-2 lg:grid-cols-4 gap-8">
           <div className="bg-card rounded-2xl p-8 border border-border text-center">
             <div className="text-4xl mb-4">⚖️</div>
             <h3 className="text-xl font-semibold text-card-foreground mb-2">
@@ -63,6 +63,16 @@ export default function HomePage() {
             </h3>
             <p className="text-muted-foreground">
               Authentic recipes from 20+ countries with detailed nutrition info and cooking time
+            </p>
+          </div>
+
+          <div className="bg-card rounded-2xl p-8 border border-border text-center">
+            <div className="text-4xl mb-4">♻️</div>
+            <h3 className="text-xl font-semibold text-card-foreground mb-2">
+              Leftover Optimizer
+            </h3>
+            <p className="text-muted-foreground">
+              Get creative recipe suggestions for your leftovers and reduce food waste
             </p>
           </div>
         </div>

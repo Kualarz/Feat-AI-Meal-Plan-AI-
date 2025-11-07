@@ -56,6 +56,17 @@ export function MainNavigation({ className = '' }: MainNavigationProps) {
               <span className="text-lg mr-2">🛒</span>
               Shopping List
             </Link>
+            <Link
+              href="/leftovers"
+              className={`block px-3 py-2 rounded-lg transition-colors ${
+                isActive('/leftovers')
+                  ? 'bg-primary text-primary-foreground'
+                  : 'text-foreground hover:bg-muted'
+              }`}
+            >
+              <span className="text-lg mr-2">♻️</span>
+              Leftover Optimizer
+            </Link>
           </div>
         </div>
 
