@@ -53,10 +53,22 @@ export default function RecipeDetailPage() {
   }>({});
   const [plannerModalOpen, setPlannerModalOpen] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
+  const [isSaved, setIsSaved] = useState(false);
+  const [userRating, setUserRating] = useState(0);
+  const [similarRecipes, setSimilarRecipes] = useState<Recipe[]>([]);
+  const [loadingSimilar, setLoadingSimilar] = useState(false);
 
   useEffect(() => {
     loadRecipe();
   }, [params.id]);
+
+  useEffect(() => {
+    if (recipe) {
+      checkIfSaved();
+      loadUserRating();
+      loadSimilarRecipes();
+    }
+  }, [recipe]);
 
   const loadRecipe = async () => {
     try {
@@ -72,6 +84,89 @@ export default function RecipeDetailPage() {
       router.push('/recipes');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const checkIfSaved = () => {
+    if (!recipe) return;
+    const saved = localStorage.getItem('savedRecipes');
+    const savedIds = saved ? JSON.parse(saved) : [];
+    setIsSaved(savedIds.includes(recipe.id));
+  };
+
+  const toggleSaveRecipe = () => {
+    if (!recipe) return;
+    const saved = localStorage.getItem('savedRecipes');
+    let savedIds = saved ? JSON.parse(saved) : [];
+
+    if (isSaved) {
+      savedIds = savedIds.filter((id: string) => id !== recipe.id);
+      setSuccessMessage('Recipe removed from saved');
+    } else {
+      savedIds.push(recipe.id);
+      setSuccessMessage('Recipe saved successfully!');
+    }
+
+    localStorage.setItem('savedRecipes', JSON.stringify(savedIds));
+    setIsSaved(!isSaved);
+    setTimeout(() => setSuccessMessage(''), 3000);
+  };
+
+  const loadUserRating = () => {
+    if (!recipe) return;
+    const ratings = localStorage.getItem('recipeRatings');
+    const ratingMap = ratings ? JSON.parse(ratings) : {};
+    setUserRating(ratingMap[recipe.id] || 0);
+  };
+
+  const setRating = (rating: number) => {
+    if (!recipe) return;
+    const ratings = localStorage.getItem('recipeRatings');
+    const ratingMap = ratings ? JSON.parse(ratings) : {};
+    ratingMap[recipe.id] = rating;
+    localStorage.setItem('recipeRatings', JSON.stringify(ratingMap));
+    setUserRating(rating);
+    setSuccessMessage(`Rated ${rating}/5 stars!`);
+    setTimeout(() => setSuccessMessage(''), 3000);
+  };
+
+  const loadSimilarRecipes = async () => {
+    if (!recipe) return;
+    try {
+      setLoadingSimilar(true);
+      const response = await fetch(`/api/recipes?cuisine=${recipe.cuisine}&limit=3&excludeId=${recipe.id}`);
+      if (response.ok) {
+        const data = await response.json();
+        setSimilarRecipes(data.recipes || []);
+      }
+    } catch (error) {
+      console.error('Error loading similar recipes:', error);
+    } finally {
+      setLoadingSimilar(false);
+    }
+  };
+
+  const handlePrint = () => {
+    window.print();
+  };
+
+  const handleShare = async (platform: string) => {
+    if (!recipe) return;
+    const url = typeof window !== 'undefined' ? window.location.href : '';
+    const text = `Check out this recipe: ${recipe.title}`;
+
+    if (platform === 'copy') {
+      try {
+        await navigator.clipboard.writeText(url);
+        setSuccessMessage('Link copied to clipboard!');
+        setTimeout(() => setSuccessMessage(''), 3000);
+      } catch {
+        alert('Failed to copy link');
+      }
+    } else if (platform === 'twitter') {
+      window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`, '_blank');
+    } else if (platform === 'facebook') {
+      window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`, '_blank');
     }
   };
 
@@ -101,7 +196,7 @@ export default function RecipeDetailPage() {
         <div className="flex-1 flex flex-col overflow-hidden">
           <div className="flex-1 overflow-y-auto p-8">
             <div className="max-w-4xl mx-auto w-full">
-              <div className="flex gap-4 mb-6">
+              <div className="flex gap-2 mb-6 flex-wrap">
                 <Button
                   variant="outline"
                   onClick={() => router.back()}
@@ -109,12 +204,52 @@ export default function RecipeDetailPage() {
                   ← Back
                 </Button>
                 {recipe && (
-                  <Button
-                    onClick={() => setPlannerModalOpen(true)}
-                    className="flex-1"
-                  >
-                    📅 Add to Planner
-                  </Button>
+                  <>
+                    <Button
+                      onClick={() => setPlannerModalOpen(true)}
+                      className="flex-1"
+                    >
+                      📅 Add to Planner
+                    </Button>
+                    <Button
+                      variant={isSaved ? 'primary' : 'outline'}
+                      onClick={toggleSaveRecipe}
+                    >
+                      {isSaved ? '❤️ Saved' : '🤍 Save'}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={handlePrint}
+                    >
+                      🖨️ Print
+                    </Button>
+                    <div className="flex gap-1">
+                      <Button
+                        variant="outline"
+                        onClick={() => handleShare('copy')}
+                        title="Copy link"
+                        className="px-3"
+                      >
+                        🔗
+                      </Button>
+                      <Button
+                        variant="outline"
+                        onClick={() => handleShare('twitter')}
+                        title="Share on Twitter"
+                        className="px-3"
+                      >
+                        𝕏
+                      </Button>
+                      <Button
+                        variant="outline"
+                        onClick={() => handleShare('facebook')}
+                        title="Share on Facebook"
+                        className="px-3"
+                      >
+                        f
+                      </Button>
+                    </div>
+                  </>
                 )}
               </div>
 
@@ -139,6 +274,32 @@ export default function RecipeDetailPage() {
           {recipe.description && (
             <p className="text-lg text-muted-foreground mb-6">{recipe.description}</p>
           )}
+
+          {/* Rating Section */}
+          <div className="mb-6 p-4 bg-muted rounded-lg border border-border">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-foreground mb-2">Your Rating</p>
+                <div className="flex gap-1">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <button
+                      key={star}
+                      onClick={() => setRating(star)}
+                      className="text-2xl cursor-pointer hover:scale-110 transition-transform"
+                    >
+                      {star <= userRating ? '⭐' : '☆'}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              {userRating > 0 && (
+                <div className="text-right">
+                  <p className="text-sm text-muted-foreground">Your rating</p>
+                  <p className="text-2xl font-bold text-primary">{userRating}/5</p>
+                </div>
+              )}
+            </div>
+          </div>
 
           {/* Tags */}
           <div className="flex flex-wrap gap-2 mb-6">
@@ -252,6 +413,61 @@ export default function RecipeDetailPage() {
                   )}
                 </div>
               </div>
+
+              {/* Nutritional Chart */}
+              <div className="mt-6">
+                <h3 className="text-lg font-semibold text-foreground mb-4">Macro Breakdown</h3>
+                <div className="space-y-4">
+                  {recipe.carbsG && (
+                    <div>
+                      <div className="flex justify-between text-sm mb-1">
+                        <span className="text-foreground">Carbohydrates</span>
+                        <span className="text-muted-foreground">{recipe.carbsG}g</span>
+                      </div>
+                      <div className="w-full bg-border rounded-full h-2">
+                        <div
+                          className="bg-blue-500 h-2 rounded-full"
+                          style={{
+                            width: `${Math.min((recipe.carbsG / 100) * 100, 100)}%`,
+                          }}
+                        ></div>
+                      </div>
+                    </div>
+                  )}
+                  {recipe.fatG && (
+                    <div>
+                      <div className="flex justify-between text-sm mb-1">
+                        <span className="text-foreground">Fat</span>
+                        <span className="text-muted-foreground">{recipe.fatG}g</span>
+                      </div>
+                      <div className="w-full bg-border rounded-full h-2">
+                        <div
+                          className="bg-yellow-500 h-2 rounded-full"
+                          style={{
+                            width: `${Math.min((recipe.fatG / 100) * 100, 100)}%`,
+                          }}
+                        ></div>
+                      </div>
+                    </div>
+                  )}
+                  {recipe.proteinG && (
+                    <div>
+                      <div className="flex justify-between text-sm mb-1">
+                        <span className="text-foreground">Protein</span>
+                        <span className="text-muted-foreground">{recipe.proteinG}g</span>
+                      </div>
+                      <div className="w-full bg-border rounded-full h-2">
+                        <div
+                          className="bg-red-500 h-2 rounded-full"
+                          style={{
+                            width: `${Math.min((recipe.proteinG / 100) * 100, 100)}%`,
+                          }}
+                        ></div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
           )}
 
@@ -334,6 +550,54 @@ export default function RecipeDetailPage() {
             </div>
           )}
         </Card>
+
+              {/* Similar Recipes */}
+              {similarRecipes.length > 0 && (
+                <div className="mt-12">
+                  <h2 className="text-2xl font-bold text-foreground mb-6">
+                    Similar Recipes
+                  </h2>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    {similarRecipes.map((similarRecipe) => (
+                      <Link key={similarRecipe.id} href={`/recipes/${similarRecipe.id}`}>
+                        <Card className="h-full cursor-pointer hover:shadow-lg transition-shadow">
+                          {similarRecipe.imageUrl && (
+                            <div className="w-full h-48 bg-muted rounded-t-lg overflow-hidden relative mb-4">
+                              <Image
+                                src={similarRecipe.imageUrl}
+                                alt={similarRecipe.title}
+                                fill
+                                className="object-cover"
+                                sizes="(max-width: 768px) 100vw, 33vw"
+                              />
+                            </div>
+                          )}
+                          <div className="p-4">
+                            <h3 className="text-lg font-semibold text-foreground mb-2">
+                              {similarRecipe.title}
+                            </h3>
+                            <div className="flex gap-2 mb-3">
+                              {similarRecipe.timeMins && (
+                                <span className="text-xs px-2 py-1 bg-primary/10 text-primary rounded">
+                                  ⏱️ {similarRecipe.timeMins}min
+                                </span>
+                              )}
+                              {similarRecipe.kcal && (
+                                <span className="text-xs px-2 py-1 bg-primary/10 text-primary rounded">
+                                  🔥 {similarRecipe.kcal}kcal
+                                </span>
+                              )}
+                            </div>
+                            <Button variant="outline" className="w-full">
+                              View Recipe →
+                            </Button>
+                          </div>
+                        </Card>
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               {/* Success Message */}
               {successMessage && (
