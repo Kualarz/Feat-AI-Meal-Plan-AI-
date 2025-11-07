@@ -7,12 +7,21 @@ import { MainNavigation } from '@/components/MainNavigation';
 import { Button } from '@/components/Button';
 import { Select } from '@/components/Select';
 import { Card } from '@/components/Card';
+import { Input } from '@/components/Input';
 import { AggregatedIngredient, GroceryCategory, groupByCategory, toCsv } from '@/lib/groceries';
 
 interface Plan {
   id: string;
   weekStart: string;
   weekEnd: string;
+}
+
+interface CustomShoppingItem {
+  id: string;
+  name: string;
+  quantity: number;
+  unit: string;
+  category: GroceryCategory;
 }
 
 const CATEGORY_EMOJI: Record<GroceryCategory, string> = {
@@ -34,9 +43,15 @@ export default function GroceriesPage() {
   const [error, setError] = useState('');
   const [checkedItems, setCheckedItems] = useState<Set<string>>(new Set());
   const [copySuccess, setCopySuccess] = useState(false);
+  const [customItems, setCustomItems] = useState<CustomShoppingItem[]>([]);
+  const [customItemName, setCustomItemName] = useState('');
+  const [customItemQuantity, setCustomItemQuantity] = useState('1');
+  const [customItemUnit, setCustomItemUnit] = useState('');
+  const [customItemCategory, setCustomItemCategory] = useState<GroceryCategory>('Other');
 
   useEffect(() => {
     fetchPlans();
+    loadCustomItems();
   }, []);
 
   useEffect(() => {
@@ -46,6 +61,53 @@ export default function GroceriesPage() {
       setIngredients([]);
     }
   }, [selectedPlanId]);
+
+  const loadCustomItems = () => {
+    try {
+      const stored = localStorage.getItem('customShoppingItems');
+      if (stored) {
+        setCustomItems(JSON.parse(stored));
+      }
+    } catch (err) {
+      console.error('Failed to load custom items:', err);
+    }
+  };
+
+  const saveCustomItems = (items: CustomShoppingItem[]) => {
+    try {
+      localStorage.setItem('customShoppingItems', JSON.stringify(items));
+    } catch (err) {
+      console.error('Failed to save custom items:', err);
+    }
+  };
+
+  const addCustomItem = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!customItemName.trim()) return;
+
+    const newItem: CustomShoppingItem = {
+      id: `custom-${Date.now()}`,
+      name: customItemName.trim(),
+      quantity: parseFloat(customItemQuantity) || 1,
+      unit: customItemUnit.trim() || 'unit',
+      category: customItemCategory,
+    };
+
+    const updated = [...customItems, newItem];
+    setCustomItems(updated);
+    saveCustomItems(updated);
+
+    setCustomItemName('');
+    setCustomItemQuantity('1');
+    setCustomItemUnit('');
+    setCustomItemCategory('Other');
+  };
+
+  const removeCustomItem = (id: string) => {
+    const updated = customItems.filter((item) => item.id !== id);
+    setCustomItems(updated);
+    saveCustomItems(updated);
+  };
 
   const fetchPlans = async () => {
     setLoadingPlans(true);
@@ -206,8 +268,77 @@ export default function GroceriesPage() {
           </div>
         </Card>
 
+        {/* Add Custom Item Section */}
+        <Card className="mb-8">
+          <h3 className="text-lg font-semibold text-foreground mb-4">Add Custom Items</h3>
+          <form onSubmit={addCustomItem} className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-foreground mb-2">
+                  Item Name
+                </label>
+                <Input
+                  type="text"
+                  placeholder="e.g., Salt, Spices, Tools"
+                  value={customItemName}
+                  onChange={(e) => setCustomItemName(e.target.value)}
+                />
+              </div>
+              <div className="grid grid-cols-3 gap-2">
+                <div>
+                  <label className="block text-sm font-medium text-foreground mb-2">
+                    Qty
+                  </label>
+                  <Input
+                    type="number"
+                    placeholder="1"
+                    value={customItemQuantity}
+                    onChange={(e) => setCustomItemQuantity(e.target.value)}
+                    step="0.5"
+                    min="0"
+                  />
+                </div>
+                <div className="col-span-2">
+                  <label className="block text-sm font-medium text-foreground mb-2">
+                    Unit
+                  </label>
+                  <Input
+                    type="text"
+                    placeholder="kg, pcs, box"
+                    value={customItemUnit}
+                    onChange={(e) => setCustomItemUnit(e.target.value)}
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-foreground mb-2">
+                Category
+              </label>
+              <Select
+                value={customItemCategory}
+                onChange={(e) => setCustomItemCategory(e.target.value as GroceryCategory)}
+                options={[
+                  { value: 'Produce', label: '🥬 Produce' },
+                  { value: 'Meat', label: '🥩 Meat' },
+                  { value: 'Dry Goods', label: '🌾 Dry Goods' },
+                  { value: 'Sauces', label: '🍶 Sauces' },
+                  { value: 'Dairy', label: '🥛 Dairy' },
+                  { value: 'Frozen', label: '❄️ Frozen' },
+                  { value: 'Other', label: '📦 Other' },
+                ]}
+              />
+            </div>
+
+            <Button type="submit" className="w-full">
+              ➕ Add Item
+            </Button>
+          </form>
+        </Card>
+
         {/* Export Buttons */}
-        {ingredients.length > 0 && (
+        {(ingredients.length > 0 || customItems.length > 0) && (
           <div className="flex gap-3 mb-8">
             <Button onClick={handleExportCsv} variant="outline" className="flex-1">
               📥 Export to CSV
@@ -260,7 +391,7 @@ export default function GroceriesPage() {
         )}
 
         {/* Grouped Ingredients Display */}
-        {!loading && ingredients.length > 0 && (
+        {!loading && (ingredients.length > 0 || customItems.length > 0) && (
           <div className="space-y-8">
             {Object.entries(grouped).map(([category, items]) => {
               if (items.length === 0) return null;
@@ -327,12 +458,86 @@ export default function GroceriesPage() {
               );
             })}
 
+            {/* Custom Items Grouped by Category */}
+            {customItems.length > 0 && (
+              <>
+                {(['Produce', 'Meat', 'Dry Goods', 'Sauces', 'Dairy', 'Frozen', 'Other'] as GroceryCategory[]).map(
+                  (category) => {
+                    const customInCategory = customItems.filter(
+                      (item) => item.category === category
+                    );
+                    if (customInCategory.length === 0) return null;
+
+                    // Check if this category already has plan ingredients
+                    const hasPlanItems = Object.keys(grouped).includes(category);
+
+                    return (
+                      <div key={`custom-${category}`}>
+                        <h3 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
+                          <span>{CATEGORY_EMOJI[category as GroceryCategory]}</span>
+                          <span>{category}</span>
+                          <span className="text-sm font-normal text-muted-foreground">
+                            ({hasPlanItems ? `${(grouped[category] || []).length} + ` : ''}{customInCategory.length} custom)
+                          </span>
+                        </h3>
+                        <Card>
+                          <div className="space-y-2">
+                            {customInCategory.map((item) => {
+                              const key = `custom-${item.id}`;
+                              const isChecked = checkedItems.has(key);
+
+                              return (
+                                <div
+                                  key={item.id}
+                                  className={`flex items-start gap-3 p-3 rounded transition-colors ${
+                                    isChecked ? 'bg-muted/50 opacity-60' : 'hover:bg-muted/30'
+                                  }`}
+                                >
+                                  <input
+                                    type="checkbox"
+                                    checked={isChecked}
+                                    onChange={() => toggleChecked(key)}
+                                    className="w-5 h-5 rounded border-border mt-0.5 cursor-pointer"
+                                  />
+                                  <div className="flex-1 min-w-0">
+                                    <div className="flex items-baseline gap-2">
+                                      <p
+                                        className={`font-medium ${
+                                          isChecked ? 'line-through text-muted-foreground' : 'text-foreground'
+                                        }`}
+                                      >
+                                        {item.name}
+                                      </p>
+                                      <span className="text-sm text-muted-foreground whitespace-nowrap">
+                                        {item.quantity} {item.unit}
+                                      </span>
+                                    </div>
+                                  </div>
+                                  <Button
+                                    variant="outline"
+                                    onClick={() => removeCustomItem(item.id)}
+                                    className="text-destructive hover:bg-destructive/10"
+                                  >
+                                    ✕
+                                  </Button>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </Card>
+                      </div>
+                    );
+                  }
+                )}
+              </>
+            )}
+
             {/* Summary Card */}
             <Card className="mt-8 bg-muted/50">
               <div className="grid grid-cols-3 gap-4 text-center">
                 <div>
                   <p className="text-sm text-muted-foreground">Total Items</p>
-                  <p className="text-3xl font-bold text-foreground">{ingredients.length}</p>
+                  <p className="text-3xl font-bold text-foreground">{ingredients.length + customItems.length}</p>
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Checked Off</p>
@@ -341,8 +546,10 @@ export default function GroceriesPage() {
                 <div>
                   <p className="text-sm text-muted-foreground">Progress</p>
                   <p className="text-3xl font-bold text-foreground">
-                    {ingredients.length > 0
-                      ? Math.round((checkedItems.size / ingredients.length) * 100)
+                    {ingredients.length + customItems.length > 0
+                      ? Math.round(
+                          (checkedItems.size / (ingredients.length + customItems.length)) * 100
+                        )
                       : 0}
                     %
                   </p>
