@@ -1,0 +1,24 @@
+Column Name,Data Type,Nullable,Default Value,Description
+id,TEXT (UUID/CUID),NO,,Primary key - unique identifier for each preference record
+userId,TEXT,NO,,Foreign key - references User table ID
+caloriesTarget,INTEGER,YES,,Daily calorie target (kcal)
+proteinTarget,INTEGER,YES,,Daily protein target (grams)
+diet,TEXT,YES,,Selected diet type (balanced, keto, vegetarian, vegan, etc.)
+halalEnabled,BOOLEAN,NO,false,Whether halal dietary guidelines are required
+vegetarianEnabled,BOOLEAN,NO,false,Whether vegetarian diet is selected
+veganEnabled,BOOLEAN,NO,false,Whether vegan diet is selected
+currentWeight,DOUBLE PRECISION,YES,,Current body weight in kilograms
+targetWeight,DOUBLE PRECISION,YES,,Goal body weight in kilograms
+weightGoal,TEXT,YES,,Weight goal type (lose, maintain, gain)
+height,DOUBLE PRECISION,YES,,Height in centimeters
+age,INTEGER,YES,,Age in years
+activityLevel,TEXT,YES,,Activity level (sedentary, light, moderate, very_active, extremely_active)
+allergens,TEXT,YES,,Comma-separated list of allergens to avoid
+dislikes,TEXT,YES,,Comma-separated list of foods user dislikes
+cuisines,TEXT,YES,Cambodian;Thai;Vietnamese,Comma-separated list of preferred cuisines
+timeBudgetMins,INTEGER,YES,,Maximum cooking time in minutes
+budgetLevel,TEXT,YES,,Budget level (low, medium, high)
+equipment,TEXT,YES,,Comma-separated list of available cooking equipment
+region,TEXT,YES,,Geographic region (e.g. KH, AU, US)
+currency,TEXT,YES,,Currency code (e.g. KHR, AUD, USD)
+updatedAt,TIMESTAMP,NO,CURRENT_TIMESTAMP,Auto-updated timestamp of last modification

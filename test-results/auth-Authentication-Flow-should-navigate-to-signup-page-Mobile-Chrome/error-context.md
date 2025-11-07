@@ -1,0 +1,43 @@
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - navigation [ref=e3]:
+      - generic [ref=e5]:
+        - link "🍽️ Feast AI" [ref=e6] [cursor=pointer]:
+          - /url: /
+          - generic [ref=e7]: 🍽️
+          - generic [ref=e8]: Feast AI
+        - button "Toggle dark mode" [ref=e9] [cursor=pointer]:
+          - img [ref=e10]
+    - generic [ref=e12]:
+      - generic [ref=e13]:
+        - heading "Welcome to Feast AI" [level=1] [ref=e14]
+        - paragraph [ref=e15]: AI-Powered Meal Planning & Nutrition Optimization
+        - paragraph [ref=e16]: Get personalized meal plans with nutrition targets calculated specifically for your weight goals, dietary preferences, and fitness level. Featuring authentic Southeast Asian, Mediterranean, and global cuisines.
+        - generic [ref=e17]:
+          - link "Get Started" [ref=e18] [cursor=pointer]:
+            - /url: /setup
+            - button "Get Started" [ref=e19]
+          - link "Browse Recipes" [ref=e20] [cursor=pointer]:
+            - /url: /recipes
+            - button "Browse Recipes" [ref=e21]
+          - link "Sign In" [ref=e22] [cursor=pointer]:
+            - /url: /auth/signin
+            - button "Sign In" [ref=e23]
+      - generic [ref=e24]:
+        - generic [ref=e25]:
+          - generic [ref=e26]: ⚖️
+          - heading "Weight Goal Optimization" [level=3] [ref=e27]
+          - paragraph [ref=e28]: Auto-calculated nutrition targets based on your body metrics and fitness goals
+        - generic [ref=e29]:
+          - generic [ref=e30]: 🤖
+          - heading "AI-Powered Planning" [level=3] [ref=e31]
+          - paragraph [ref=e32]: Personalized meal plans that respect your dietary preferences, allergens, and budget
+        - generic [ref=e33]:
+          - generic [ref=e34]: 🌍
+          - heading "Global Cuisines" [level=3] [ref=e35]
+          - paragraph [ref=e36]: Authentic recipes from 20+ countries with detailed nutrition info and cooking time
+  - alert [ref=e37]
+```

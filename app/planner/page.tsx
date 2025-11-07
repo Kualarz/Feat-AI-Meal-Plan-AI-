@@ -4,6 +4,8 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/Button';
 import { Card } from '@/components/Card';
+import { Navbar } from '@/components/Navbar';
+import { MainNavigation } from '@/components/MainNavigation';
 
 interface Recipe {
   id: string;
@@ -153,27 +155,17 @@ export default function PlannerPage() {
   const groupedMeals = groupMealsByDate();
 
   return (
-    <div className="min-h-screen bg-background">
-      <nav className="bg-card border-b border-border">
-        <div className="max-w-7xl mx-auto px-4 py-4">
-          <div className="flex justify-between items-center">
-            <h1 className="text-2xl font-bold text-foreground">eatr-vibe</h1>
-            <div className="flex gap-4">
-              <Link href="/recipes">
-                <Button variant="outline">Recipes</Button>
-              </Link>
-              <Link href="/groceries">
-                <Button variant="outline">Groceries</Button>
-              </Link>
-              <Link href="/setup">
-                <Button variant="secondary">Settings</Button>
-              </Link>
-            </div>
-          </div>
-        </div>
-      </nav>
+    <div className="min-h-screen bg-background flex flex-col">
+      <Navbar />
 
-      <div className="max-w-7xl mx-auto px-4 py-8">
+      <div className="flex flex-1 overflow-hidden">
+        {/* Sidebar Navigation */}
+        <MainNavigation className="hidden md:block w-64 overflow-y-auto" />
+
+        {/* Main Content */}
+        <div className="flex-1 flex flex-col overflow-hidden">
+          <div className="flex-1 overflow-y-auto p-8">
+            <div className="max-w-7xl mx-auto w-full">
         <div className="flex justify-between items-center mb-8">
           <div>
             <h2 className="text-3xl font-bold text-foreground">
@@ -271,6 +263,9 @@ export default function PlannerPage() {
             ))}
           </div>
         )}
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );

@@ -1,0 +1,75 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e2]:
+  - navigation [ref=e3]:
+    - generic [ref=e5]:
+      - link "🍽️ Feast AI" [ref=e6]:
+        - /url: /
+        - generic [ref=e7]: 🍽️
+        - generic [ref=e8]: Feast AI
+      - button "Toggle dark mode" [ref=e9] [cursor=pointer]:
+        - img [ref=e10]
+  - generic [ref=e14]:
+    - heading "Browse Recipes" [level=2] [ref=e15]
+    - generic [ref=e16]:
+      - link "🔗 Import from URL" [ref=e17]:
+        - /url: /recipes/import
+        - button "🔗 Import from URL" [ref=e18] [cursor=pointer]
+      - button "📹 Import from YouTube" [ref=e19] [cursor=pointer]
+      - link "+ Add Recipe" [ref=e20]:
+        - /url: /recipes/add
+        - button "+ Add Recipe" [ref=e21] [cursor=pointer]
+      - link "Planner" [ref=e22]:
+        - /url: /planner
+        - button "Planner" [ref=e23] [cursor=pointer]
+      - link "Groceries" [ref=e24]:
+        - /url: /groceries
+        - button "Groceries" [ref=e25] [cursor=pointer]
+      - link "Settings" [ref=e26]:
+        - /url: /setup
+        - button "Settings" [ref=e27] [cursor=pointer]
+  - generic [ref=e29]:
+    - complementary [ref=e30]:
+      - generic [ref=e31]:
+        - heading "Filters" [level=2] [ref=e32]
+        - generic [ref=e33]:
+          - generic [ref=e34]:
+            - generic [ref=e35]: Search
+            - textbox "Search recipes..." [ref=e36]
+          - generic [ref=e37]:
+            - generic [ref=e38]: Cuisine
+            - combobox [ref=e39]:
+              - option "All Cuisines" [selected]
+              - option "Cambodian"
+              - option "Thai"
+              - option "Vietnamese"
+              - option "Australian"
+              - option "American"
+          - generic [ref=e40]:
+            - generic [ref=e41]: Difficulty
+            - combobox [ref=e42]:
+              - option "All Levels" [selected]
+              - option "Easy"
+              - option "Medium"
+              - option "Hard"
+          - generic [ref=e43]:
+            - paragraph [ref=e44]: Dietary Preferences
+            - generic [ref=e45]:
+              - generic [ref=e46] [cursor=pointer]:
+                - checkbox "🥦 Vegetarian" [ref=e47]
+                - generic [ref=e48]: 🥦 Vegetarian
+              - generic [ref=e49] [cursor=pointer]:
+                - checkbox "🌿 Vegan" [ref=e50]
+                - generic [ref=e51]: 🌿 Vegan
+              - generic [ref=e52] [cursor=pointer]:
+                - checkbox "🕌 Halal" [ref=e53]
+                - generic [ref=e54]: 🕌 Halal
+          - generic [ref=e55]:
+            - generic [ref=e56]: Max Time (minutes)
+            - spinbutton [ref=e57]
+          - generic [ref=e58]:
+            - generic [ref=e59]: Max Price ($)
+            - spinbutton [ref=e60]
+    - generic [ref=e62]: Loading recipes...
+```

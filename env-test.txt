@@ -1,0 +1,1 @@
+DATABASE_URL=postgresql://postgres:FeastAI%231711@db.zrocvslsoumnjmywvqev.supabase.co:5432/postgres?schema=public

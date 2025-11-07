@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Navbar } from '@/components/Navbar';
+import { MainNavigation } from '@/components/MainNavigation';
 import { Button } from '@/components/Button';
 import { Select } from '@/components/Select';
 import { Card } from '@/components/Card';
@@ -127,21 +128,18 @@ export default function GroceriesPage() {
   const selectedPlan = plans.find((p) => p.id === selectedPlanId);
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background flex flex-col">
       <Navbar />
 
-      <div className="bg-card border-b border-border">
-        <div className="max-w-4xl mx-auto px-4 py-4">
-          <div className="flex justify-between items-center">
-            <h2 className="text-2xl font-bold text-foreground">Shopping List</h2>
-            <Link href="/planner">
-              <Button variant="outline">← Back to Planner</Button>
-            </Link>
-          </div>
-        </div>
-      </div>
+      <div className="flex flex-1 overflow-hidden">
+        {/* Sidebar Navigation */}
+        <MainNavigation className="hidden md:block w-64 overflow-y-auto" />
 
-      <div className="max-w-4xl mx-auto px-4 py-8">
+        {/* Main Content */}
+        <div className="flex-1 flex flex-col overflow-hidden">
+          <div className="flex-1 overflow-y-auto p-8">
+            <div className="max-w-4xl mx-auto w-full">
+              <h2 className="text-2xl font-bold text-foreground mb-8">Shopping List</h2>
         {/* Error State */}
         {error && !loadingPlans && (
           <Card className="mb-8 bg-red-50 dark:bg-red-950 border-red-500/30">
@@ -353,6 +351,9 @@ export default function GroceriesPage() {
             </Card>
           </div>
         )}
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
