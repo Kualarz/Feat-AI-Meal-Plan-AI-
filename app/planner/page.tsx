@@ -6,6 +6,7 @@ import { Button } from '@/components/Button';
 import { Card } from '@/components/Card';
 import { Navbar } from '@/components/Navbar';
 import { MainNavigation } from '@/components/MainNavigation';
+import { MealPlannerCalendar } from '@/components/MealPlannerCalendar';
 
 interface Recipe {
   id: string;
@@ -38,6 +39,7 @@ export default function PlannerPage() {
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
   const [preferences, setPreferences] = useState<any>(null);
+  const [selectedDate, setSelectedDate] = useState<string>('');
 
   useEffect(() => {
     loadPlanAndPreferences();
@@ -152,7 +154,22 @@ export default function PlannerPage() {
     return Object.entries(grouped).sort(([a], [b]) => a.localeCompare(b));
   };
 
-  const groupedMeals = groupMealsByDate();
+  const getFilteredMeals = (): [string, PlanMeal[]][] => {
+    if (!plan) return [];
+
+    if (!selectedDate) {
+      return groupMealsByDate() as [string, PlanMeal[]][];
+    }
+
+    const mealsForDate = plan.meals.filter((meal) => meal.dateISO === selectedDate);
+    if (mealsForDate.length === 0) {
+      return [];
+    }
+
+    return [[selectedDate, mealsForDate]];
+  };
+
+  const groupedMeals = getFilteredMeals();
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
@@ -199,6 +216,39 @@ export default function PlannerPage() {
           </Card>
         ) : (
           <div className="grid gap-6">
+            {/* Calendar */}
+            <MealPlannerCalendar
+              meals={plan.meals}
+              weekStart={plan.weekStart}
+              weekEnd={plan.weekEnd}
+              selectedDate={selectedDate}
+              onDateSelect={setSelectedDate}
+            />
+
+            {/* Selected Date Info and Clear Button */}
+            {selectedDate && (
+              <div className="flex items-center justify-between bg-primary/10 border border-primary/30 rounded-lg p-4">
+                <div>
+                  <p className="text-sm font-medium text-foreground">
+                    Showing meals for{' '}
+                    <span className="font-semibold">
+                      {new Date(selectedDate).toLocaleDateString('en-US', {
+                        weekday: 'long',
+                        month: 'long',
+                        day: 'numeric',
+                      })}
+                    </span>
+                  </p>
+                </div>
+                <Button variant="outline" onClick={() => setSelectedDate('')} className="text-sm">
+                  Show All Meals
+                </Button>
+              </div>
+            )}
+
+            {/* Meals List */}
+            {groupedMeals.length > 0 ? (
+            <div className="grid gap-6">
             {groupedMeals.map(([date, meals]) => (
               <Card key={date}>
                 <h3 className="text-xl font-semibold text-foreground mb-4">
@@ -261,6 +311,18 @@ export default function PlannerPage() {
                 </div>
               </Card>
             ))}
+            </div>
+            ) : selectedDate ? (
+              <Card className="text-center py-12">
+                <div className="text-6xl mb-4">🍽️</div>
+                <h3 className="text-xl font-semibold text-foreground mb-2">
+                  No meals planned
+                </h3>
+                <p className="text-muted-foreground">
+                  No meals scheduled for this date. Click "Show All Meals" to view your full plan.
+                </p>
+              </Card>
+            ) : null}
           </div>
         )}
             </div>
