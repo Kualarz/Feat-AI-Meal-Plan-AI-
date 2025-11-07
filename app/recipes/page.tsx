@@ -912,6 +912,7 @@ function ImportRecipeTab({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [importedRecipe, setImportedRecipe] = useState<Recipe | null>(null);
+  const [youtubeModalOpen, setYoutubeModalOpen] = useState(false);
 
   const handleImport = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -950,6 +951,11 @@ function ImportRecipeTab({
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleYoutubeSuccess = (recipeId: string) => {
+    setYoutubeModalOpen(false);
+    onSuccess(recipeId);
   };
 
   return (
@@ -1055,6 +1061,22 @@ function ImportRecipeTab({
               etc.
             </p>
           </div>
+
+          {/* YouTube Import Section */}
+          <div className="border-t border-border mt-8 pt-8">
+            <h4 className="text-lg font-semibold text-foreground mb-4">Or Import from YouTube</h4>
+            <p className="text-sm text-muted-foreground mb-4">
+              Extract recipes from YouTube cooking videos using AI
+            </p>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setYoutubeModalOpen(true)}
+              className="w-full"
+            >
+              📹 Open YouTube Import
+            </Button>
+          </div>
         </Card>
 
         {/* Preview or Empty State */}
@@ -1144,6 +1166,12 @@ function ImportRecipeTab({
           )}
         </div>
       </div>
+
+      <YouTubeImportModal
+        isOpen={youtubeModalOpen}
+        onClose={() => setYoutubeModalOpen(false)}
+        onSuccess={handleYoutubeSuccess}
+      />
     </div>
   );
 }
