@@ -9,6 +9,7 @@ import { Input } from '@/components/Input';
 import { Select } from '@/components/Select';
 import { LeftoverRecipeSuggestion } from '@/lib/ai-leftovers';
 import { GroceryCategory } from '@/lib/groceries';
+import { LeftoversCalendar } from '@/components/LeftoversCalendar';
 
 interface LeftoverIngredient {
   id: string;
@@ -47,6 +48,7 @@ export default function LeftoversPage() {
   const [error, setError] = useState('');
   const [currency] = useState('USD');
   const [showSuggestions, setShowSuggestions] = useState(false);
+  const [selectedDate, setSelectedDate] = useState<string | undefined>(undefined);
 
   useEffect(() => {
     // Load leftovers from localStorage
@@ -177,13 +179,23 @@ export default function LeftoversPage() {
 
   const groupByCategory = () => {
     const grouped: Partial<Record<GroceryCategory, LeftoverIngredient[]>> = {};
-    leftovers.forEach((item) => {
+    const itemsToDisplay = selectedDate
+      ? leftovers.filter((item) => item.expirationDate === selectedDate)
+      : leftovers;
+
+    itemsToDisplay.forEach((item) => {
       if (!grouped[item.category]) {
         grouped[item.category] = [];
       }
       grouped[item.category]!.push(item);
     });
     return grouped;
+  };
+
+  const getDisplayedLeftovers = () => {
+    return selectedDate
+      ? leftovers.filter((item) => item.expirationDate === selectedDate)
+      : leftovers;
   };
 
   return (
@@ -199,6 +211,29 @@ export default function LeftoversPage() {
           <div className="flex-1 overflow-y-auto p-8">
             <div className="max-w-5xl mx-auto w-full">
               <h2 className="text-3xl font-bold text-foreground mb-8">Leftover Optimizer</h2>
+
+              {/* Expiration Calendar */}
+              {leftovers.length > 0 && (
+                <div className="mb-8">
+                  <LeftoversCalendar
+                    leftovers={leftovers}
+                    selectedDate={selectedDate}
+                    onDateSelect={(date) => setSelectedDate(date === selectedDate ? undefined : date)}
+                  />
+                </div>
+              )}
+
+              {/* Clear selection button when a date is selected */}
+              {selectedDate && (
+                <div className="mb-6">
+                  <Button
+                    variant="outline"
+                    onClick={() => setSelectedDate(undefined)}
+                  >
+                    ✕ Clear date filter ({selectedDate})
+                  </Button>
+                </div>
+              )}
 
               {/* Add Leftover Form */}
               <Card className="mb-8">
@@ -303,13 +338,28 @@ export default function LeftoversPage() {
                 <>
                   <div className="mb-6">
                     <div className="flex justify-between items-center mb-4">
-                      <h3 className="text-2xl font-bold text-foreground">
-                        Your Leftovers
-                      </h3>
+                      <div>
+                        <h3 className="text-2xl font-bold text-foreground">
+                          Your Leftovers
+                          {selectedDate && (
+                            <span className="text-base text-muted-foreground font-normal ml-2">
+                              (Expiring on {new Date(selectedDate).toLocaleDateString()})
+                            </span>
+                          )}
+                        </h3>
+                      </div>
                       <div className="text-sm text-muted-foreground">
-                        {getActiveIngredients().length} active items
+                        {getDisplayedLeftovers().filter((i) => !i.used).length}/{getDisplayedLeftovers().length} active
                       </div>
                     </div>
+
+                    {getDisplayedLeftovers().length === 0 && selectedDate && (
+                      <Card className="text-center py-8">
+                        <p className="text-muted-foreground">
+                          No leftovers expiring on {new Date(selectedDate).toLocaleDateString()}
+                        </p>
+                      </Card>
+                    )}
 
                     {Object.entries(groupByCategory()).map(([categoryKey, items]) => {
                       if (items.length === 0) return null;
