@@ -22,7 +22,16 @@ interface CustomShoppingItem {
   quantity: number;
   unit: string;
   category: GroceryCategory;
+  price?: number;
 }
+
+const COMMON_ITEMS = [
+  'Apples', 'Bananas', 'Milk', 'Eggs', 'Bread', 'Chicken', 'Beef', 'Pasta', 'Rice', 'Tomatoes',
+  'Onions', 'Garlic', 'Olive Oil', 'Salt', 'Pepper', 'Sugar', 'Flour', 'Butter', 'Cheese', 'Yogurt',
+  'Lettuce', 'Carrots', 'Potatoes', 'Broccoli', 'Bell Peppers', 'Mushrooms', 'Lemon', 'Lime',
+  'Soy Sauce', 'Fish Sauce', 'Vinegar', 'Honey', 'Ginger', 'Chili', 'Cinnamon', 'Turmeric',
+  'Basil', 'Thyme', 'Oregano', 'Cumin', 'Paprika', 'Black Beans', 'Chickpeas', 'Lentils',
+];
 
 const CATEGORY_EMOJI: Record<GroceryCategory, string> = {
   Produce: '🥬',
@@ -48,6 +57,10 @@ export default function GroceriesPage() {
   const [customItemQuantity, setCustomItemQuantity] = useState('1');
   const [customItemUnit, setCustomItemUnit] = useState('');
   const [customItemCategory, setCustomItemCategory] = useState<GroceryCategory>('Other');
+  const [customItemPrice, setCustomItemPrice] = useState('');
+  const [editingItemId, setEditingItemId] = useState<string | null>(null);
+  const [suggestions, setSuggestions] = useState<string[]>([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
 
   useEffect(() => {
     fetchPlans();
@@ -91,6 +104,7 @@ export default function GroceriesPage() {
       quantity: parseFloat(customItemQuantity) || 1,
       unit: customItemUnit.trim() || 'unit',
       category: customItemCategory,
+      price: customItemPrice ? parseFloat(customItemPrice) : undefined,
     };
 
     const updated = [...customItems, newItem];
@@ -101,12 +115,88 @@ export default function GroceriesPage() {
     setCustomItemQuantity('1');
     setCustomItemUnit('');
     setCustomItemCategory('Other');
+    setCustomItemPrice('');
   };
 
   const removeCustomItem = (id: string) => {
     const updated = customItems.filter((item) => item.id !== id);
     setCustomItems(updated);
     saveCustomItems(updated);
+  };
+
+  const startEditItem = (item: CustomShoppingItem) => {
+    setEditingItemId(item.id);
+    setCustomItemName(item.name);
+    setCustomItemQuantity(item.quantity.toString());
+    setCustomItemUnit(item.unit);
+    setCustomItemCategory(item.category);
+    setCustomItemPrice(item.price?.toString() || '');
+  };
+
+  const saveEditedItem = () => {
+    if (!customItemName.trim() || !editingItemId) return;
+
+    const updated = customItems.map((item) =>
+      item.id === editingItemId
+        ? {
+            ...item,
+            name: customItemName.trim(),
+            quantity: parseFloat(customItemQuantity) || 1,
+            unit: customItemUnit.trim() || 'unit',
+            category: customItemCategory,
+            price: customItemPrice ? parseFloat(customItemPrice) : undefined,
+          }
+        : item
+    );
+
+    setCustomItems(updated);
+    saveCustomItems(updated);
+    cancelEdit();
+  };
+
+  const cancelEdit = () => {
+    setEditingItemId(null);
+    setCustomItemName('');
+    setCustomItemQuantity('1');
+    setCustomItemUnit('');
+    setCustomItemCategory('Other');
+    setCustomItemPrice('');
+  };
+
+  const handleItemNameChange = (value: string) => {
+    setCustomItemName(value);
+    if (value.length > 0) {
+      const filtered = COMMON_ITEMS.filter((item) =>
+        item.toLowerCase().includes(value.toLowerCase())
+      );
+      setSuggestions(filtered.slice(0, 5));
+      setShowSuggestions(true);
+    } else {
+      setSuggestions([]);
+      setShowSuggestions(false);
+    }
+  };
+
+  const selectSuggestion = (item: string) => {
+    setCustomItemName(item);
+    setSuggestions([]);
+    setShowSuggestions(false);
+  };
+
+  const clearAllChecked = () => {
+    setCheckedItems(new Set());
+  };
+
+  const deleteAllCustomItems = () => {
+    if (confirm('Are you sure you want to delete all custom items?')) {
+      setCustomItems([]);
+      saveCustomItems([]);
+      setCheckedItems(new Set());
+    }
+  };
+
+  const calculateTotalPrice = () => {
+    return customItems.reduce((total, item) => total + (item.price || 0), 0);
   };
 
   const fetchPlans = async () => {
@@ -268,12 +358,14 @@ export default function GroceriesPage() {
           </div>
         </Card>
 
-        {/* Add Custom Item Section */}
+        {/* Add/Edit Custom Item Section */}
         <Card className="mb-8">
-          <h3 className="text-lg font-semibold text-foreground mb-4">Add Custom Items</h3>
-          <form onSubmit={addCustomItem} className="space-y-4">
+          <h3 className="text-lg font-semibold text-foreground mb-4">
+            {editingItemId ? 'Edit Item' : 'Add Custom Items'}
+          </h3>
+          <form onSubmit={editingItemId ? (e) => { e.preventDefault(); saveEditedItem(); } : addCustomItem} className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
+              <div className="relative">
                 <label className="block text-sm font-medium text-foreground mb-2">
                   Item Name
                 </label>
@@ -281,8 +373,22 @@ export default function GroceriesPage() {
                   type="text"
                   placeholder="e.g., Salt, Spices, Tools"
                   value={customItemName}
-                  onChange={(e) => setCustomItemName(e.target.value)}
+                  onChange={(e) => handleItemNameChange(e.target.value)}
                 />
+                {showSuggestions && suggestions.length > 0 && (
+                  <div className="absolute top-full left-0 right-0 mt-1 bg-muted border border-border rounded-lg shadow-lg z-10">
+                    {suggestions.map((suggestion) => (
+                      <button
+                        key={suggestion}
+                        type="button"
+                        onClick={() => selectSuggestion(suggestion)}
+                        className="w-full text-left px-3 py-2 hover:bg-primary/10 text-sm text-foreground first:rounded-t-lg last:rounded-b-lg"
+                      >
+                        {suggestion}
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
               <div className="grid grid-cols-3 gap-2">
                 <div>
@@ -312,40 +418,94 @@ export default function GroceriesPage() {
               </div>
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-foreground mb-2">
-                Category
-              </label>
-              <Select
-                value={customItemCategory}
-                onChange={(e) => setCustomItemCategory(e.target.value as GroceryCategory)}
-                options={[
-                  { value: 'Produce', label: '🥬 Produce' },
-                  { value: 'Meat', label: '🥩 Meat' },
-                  { value: 'Dry Goods', label: '🌾 Dry Goods' },
-                  { value: 'Sauces', label: '🍶 Sauces' },
-                  { value: 'Dairy', label: '🥛 Dairy' },
-                  { value: 'Frozen', label: '❄️ Frozen' },
-                  { value: 'Other', label: '📦 Other' },
-                ]}
-              />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-foreground mb-2">
+                  Category
+                </label>
+                <Select
+                  value={customItemCategory}
+                  onChange={(e) => setCustomItemCategory(e.target.value as GroceryCategory)}
+                  options={[
+                    { value: 'Produce', label: '🥬 Produce' },
+                    { value: 'Meat', label: '🥩 Meat' },
+                    { value: 'Dry Goods', label: '🌾 Dry Goods' },
+                    { value: 'Sauces', label: '🍶 Sauces' },
+                    { value: 'Dairy', label: '🥛 Dairy' },
+                    { value: 'Frozen', label: '❄️ Frozen' },
+                    { value: 'Other', label: '📦 Other' },
+                  ]}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-foreground mb-2">
+                  Price (Optional)
+                </label>
+                <Input
+                  type="number"
+                  placeholder="0.00"
+                  value={customItemPrice}
+                  onChange={(e) => setCustomItemPrice(e.target.value)}
+                  step="0.01"
+                  min="0"
+                />
+              </div>
             </div>
 
-            <Button type="submit" className="w-full">
-              ➕ Add Item
-            </Button>
+            <div className="flex gap-2">
+              <Button type="submit" className="flex-1">
+                {editingItemId ? '💾 Save Changes' : '➕ Add Item'}
+              </Button>
+              {editingItemId && (
+                <Button type="button" variant="outline" onClick={cancelEdit} className="flex-1">
+                  Cancel
+                </Button>
+              )}
+            </div>
           </form>
         </Card>
 
-        {/* Export Buttons */}
+        {/* Action Buttons */}
         {(ingredients.length > 0 || customItems.length > 0) && (
-          <div className="flex gap-3 mb-8">
-            <Button onClick={handleExportCsv} variant="outline" className="flex-1">
-              📥 Export to CSV
-            </Button>
-            <Button onClick={handleCopyToClipboard} variant="outline" className="flex-1">
-              {copySuccess ? '✓ Copied!' : '📋 Copy List'}
-            </Button>
+          <div className="space-y-3 mb-8">
+            {/* Export and Share Buttons */}
+            <div className="flex gap-2 flex-wrap">
+              <Button onClick={handleExportCsv} variant="outline" className="flex-1 min-w-max">
+                📥 Export to CSV
+              </Button>
+              <Button onClick={handleCopyToClipboard} variant="outline" className="flex-1 min-w-max">
+                {copySuccess ? '✓ Copied!' : '📋 Copy List'}
+              </Button>
+              <Button
+                onClick={() => {
+                  const text = customItems
+                    .map((item) => `${item.name} - ${item.quantity} ${item.unit}${item.price ? ` ($${item.price.toFixed(2)})` : ''}`)
+                    .join('\n');
+                  navigator.clipboard.writeText(text);
+                  alert('Shopping list copied to clipboard!');
+                }}
+                variant="outline"
+                className="flex-1 min-w-max"
+              >
+                📤 Share
+              </Button>
+            </div>
+
+            {/* Bulk Action Buttons */}
+            {(checkedItems.size > 0 || customItems.length > 0) && (
+              <div className="flex gap-2 flex-wrap">
+                {checkedItems.size > 0 && (
+                  <Button onClick={clearAllChecked} variant="outline" className="flex-1 min-w-max">
+                    ↺ Clear Checked ({checkedItems.size})
+                  </Button>
+                )}
+                {customItems.length > 0 && (
+                  <Button onClick={deleteAllCustomItems} variant="outline" className="flex-1 min-w-max text-destructive hover:bg-destructive/10">
+                    🗑️ Delete All Custom
+                  </Button>
+                )}
+              </div>
+            )}
           </div>
         )}
 
@@ -500,7 +660,7 @@ export default function GroceriesPage() {
                                     className="w-5 h-5 rounded border-border mt-0.5 cursor-pointer"
                                   />
                                   <div className="flex-1 min-w-0">
-                                    <div className="flex items-baseline gap-2">
+                                    <div className="flex items-baseline gap-2 flex-wrap">
                                       <p
                                         className={`font-medium ${
                                           isChecked ? 'line-through text-muted-foreground' : 'text-foreground'
@@ -511,15 +671,31 @@ export default function GroceriesPage() {
                                       <span className="text-sm text-muted-foreground whitespace-nowrap">
                                         {item.quantity} {item.unit}
                                       </span>
+                                      {item.price && (
+                                        <span className="text-sm font-medium text-primary">
+                                          ${item.price.toFixed(2)}
+                                        </span>
+                                      )}
                                     </div>
                                   </div>
-                                  <Button
-                                    variant="outline"
-                                    onClick={() => removeCustomItem(item.id)}
-                                    className="text-destructive hover:bg-destructive/10"
-                                  >
-                                    ✕
-                                  </Button>
+                                  <div className="flex gap-1">
+                                    <Button
+                                      variant="outline"
+                                      onClick={() => startEditItem(item)}
+                                      className="px-3 text-sm"
+                                      title="Edit item"
+                                    >
+                                      ✎
+                                    </Button>
+                                    <Button
+                                      variant="outline"
+                                      onClick={() => removeCustomItem(item.id)}
+                                      className="px-3 text-sm text-destructive hover:bg-destructive/10"
+                                      title="Delete item"
+                                    >
+                                      ✕
+                                    </Button>
+                                  </div>
                                 </div>
                               );
                             })}
@@ -534,18 +710,18 @@ export default function GroceriesPage() {
 
             {/* Summary Card */}
             <Card className="mt-8 bg-muted/50">
-              <div className="grid grid-cols-3 gap-4 text-center">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
                 <div>
                   <p className="text-sm text-muted-foreground">Total Items</p>
-                  <p className="text-3xl font-bold text-foreground">{ingredients.length + customItems.length}</p>
+                  <p className="text-2xl md:text-3xl font-bold text-foreground">{ingredients.length + customItems.length}</p>
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Checked Off</p>
-                  <p className="text-3xl font-bold text-foreground">{checkedItems.size}</p>
+                  <p className="text-2xl md:text-3xl font-bold text-foreground">{checkedItems.size}</p>
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Progress</p>
-                  <p className="text-3xl font-bold text-foreground">
+                  <p className="text-2xl md:text-3xl font-bold text-foreground">
                     {ingredients.length + customItems.length > 0
                       ? Math.round(
                           (checkedItems.size / (ingredients.length + customItems.length)) * 100
@@ -554,6 +730,14 @@ export default function GroceriesPage() {
                     %
                   </p>
                 </div>
+                {calculateTotalPrice() > 0 && (
+                  <div>
+                    <p className="text-sm text-muted-foreground">Est. Cost</p>
+                    <p className="text-2xl md:text-3xl font-bold text-primary">
+                      ${calculateTotalPrice().toFixed(2)}
+                    </p>
+                  </div>
+                )}
               </div>
             </Card>
           </div>
