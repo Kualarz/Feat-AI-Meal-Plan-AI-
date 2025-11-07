@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import Link from 'next/link';
 import { Navbar } from '@/components/Navbar';
 import { MainNavigation } from '@/components/MainNavigation';
 import { Button } from '@/components/Button';
@@ -46,7 +45,7 @@ export default function LeftoversPage() {
   const [suggestions, setSuggestions] = useState<LeftoverRecipeSuggestion[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [currency, setCurrency] = useState('USD');
+  const [currency] = useState('USD');
   const [showSuggestions, setShowSuggestions] = useState(false);
 
   useEffect(() => {
@@ -139,6 +138,8 @@ export default function LeftoversPage() {
 
     try {
       const ingredients = activeItems.map((item) => `${item.quantity} ${item.unit} ${item.name}`);
+      console.log('Sending ingredients:', ingredients);
+
       const response = await fetch('/api/ai/leftovers', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -150,14 +151,25 @@ export default function LeftoversPage() {
 
       if (!response.ok) {
         const data = await response.json();
-        throw new Error(data.error || 'Failed to generate recipes');
+        console.error('API Error Response:', data);
+        throw new Error(data.error || `Failed to generate recipes (${response.status})`);
       }
 
       const data = await response.json();
-      setSuggestions(data.recipes.suggestions || []);
+      console.log('API Response:', data);
+
+      const recipeSuggestions = data.recipes?.suggestions || [];
+      if (recipeSuggestions.length === 0) {
+        setError('No recipes could be generated. Please try again.');
+        return;
+      }
+
+      setSuggestions(recipeSuggestions);
       setShowSuggestions(true);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred');
+      const errorMessage = err instanceof Error ? err.message : 'An error occurred';
+      console.error('Generate recipes error:', err);
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
