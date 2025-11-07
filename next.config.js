@@ -14,6 +14,11 @@ const nextConfig = {
         hostname: 'spoonacular.com',
         pathname: '/**',
       },
+      // Unsplash for recipe images
+      {
+        protocol: 'https',
+        hostname: 'images.unsplash.com',
+      },
       // CDNs and common image services
       {
         protocol: 'https',
