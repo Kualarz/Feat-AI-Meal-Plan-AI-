@@ -4,12 +4,38 @@ import { getNutritionSummary } from '@/lib/nutrition';
 import { requireAuth, createUnauthorizedResponse } from '@/lib/auth-middleware';
 import { handleAPIError } from '@/lib/api-errors';
 
+// Default preferences for guests and new users
+const DEFAULT_PREFERENCES = {
+  caloriesTarget: 2000,
+  proteinTarget: 120,
+  diet: 'balanced',
+  halalEnabled: false,
+  vegetarianEnabled: false,
+  veganEnabled: false,
+  allergens: '',
+  dislikes: '',
+  cuisines: 'Cambodian,Thai,Vietnamese',
+  timeBudgetMins: 40,
+  budgetLevel: 'medium',
+  equipment: 'stovetop,rice cooker',
+  region: 'KH',
+  currency: 'KHR',
+  currentWeight: 70,
+  targetWeight: 70,
+  weightGoal: 'maintain',
+  height: 170,
+  age: 30,
+  activityLevel: 'moderate',
+};
+
 export async function GET(request: NextRequest) {
   try {
-    // Require authentication
+    // Optional authentication - allow guests with defaults
     const user = requireAuth(request);
+
     if (!user) {
-      return createUnauthorizedResponse();
+      // Return default preferences for guests
+      return NextResponse.json(DEFAULT_PREFERENCES);
     }
 
     const preference = await db.preference.findFirst({
@@ -19,28 +45,7 @@ export async function GET(request: NextRequest) {
 
     if (!preference) {
       // Return default preferences
-      return NextResponse.json({
-        caloriesTarget: 2000,
-        proteinTarget: 120,
-        diet: 'balanced',
-        halalEnabled: false,
-        vegetarianEnabled: false,
-        veganEnabled: false,
-        allergens: '',
-        dislikes: '',
-        cuisines: 'Cambodian,Thai,Vietnamese',
-        timeBudgetMins: 40,
-        budgetLevel: 'medium',
-        equipment: 'stovetop,rice cooker',
-        region: 'KH',
-        currency: 'KHR',
-        currentWeight: 70,
-        targetWeight: 70,
-        weightGoal: 'maintain',
-        height: 170,
-        age: 30,
-        activityLevel: 'moderate',
-      });
+      return NextResponse.json(DEFAULT_PREFERENCES);
     }
 
     return NextResponse.json(preference);

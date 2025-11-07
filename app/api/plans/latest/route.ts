@@ -5,10 +5,12 @@ import { handleAPIError } from '@/lib/api-errors';
 
 export async function GET(request: NextRequest) {
   try {
-    // Require authentication
+    // Optional authentication - guests get null
     const user = requireAuth(request);
+
     if (!user) {
-      return createUnauthorizedResponse();
+      // Return null for guests (no plan available)
+      return NextResponse.json({ plan: null });
     }
 
     const plan = await db.plan.findFirst({
