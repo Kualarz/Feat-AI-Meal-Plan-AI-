@@ -35,6 +35,17 @@ export function MainNavigation({ className = '' }: MainNavigationProps) {
               Recipe Browser
             </Link>
             <Link
+              href="/saved-recipes"
+              className={`block px-3 py-2 rounded-lg transition-colors ${
+                isActive('/saved-recipes')
+                  ? 'bg-primary text-primary-foreground'
+                  : 'text-foreground hover:bg-muted'
+              }`}
+            >
+              <span className="text-lg mr-2">❤️</span>
+              Saved Recipes
+            </Link>
+            <Link
               href="/planner"
               className={`block px-3 py-2 rounded-lg transition-colors ${
                 isActive('/planner')
