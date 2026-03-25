@@ -27,7 +27,8 @@
       "Bash(NODE_DEBUG=dotenv npx prisma:*)",
       "Bash(npm run test:e2e:*)",
       "Bash(npx playwright install)",
-      "Bash(timeout 30 curl:*)"
+      "Bash(timeout 30 curl:*)",
+      "Bash(npx tsc:*)"
     ],
     "deny": [],
     "ask": []

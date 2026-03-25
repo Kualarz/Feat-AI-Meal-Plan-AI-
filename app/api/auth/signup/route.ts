@@ -67,13 +67,23 @@ export async function POST(request: NextRequest) {
     const hashedPassword = await hashPassword(password);
 
     // Create new user with password field (will exist after schema migration)
-    const user = await db.user.create({
-      data: {
-        name,
-        email,
-        password: hashedPassword as any,
-      } as any,
-    });
+    let user;
+    try {
+      user = await db.user.create({
+        data: {
+          name,
+          email,
+          password: hashedPassword as any,
+        } as any,
+      });
+    } catch (dbError) {
+      // Surface DB error message for easier debugging in development
+      console.error('DB error creating user:', dbError);
+      return NextResponse.json(
+        createErrorResponse(500, 'Failed to create account', dbError instanceof Error ? dbError.message : String(dbError)),
+        { status: 500 }
+      );
+    }
 
     // Generate token
     const token = generateToken(user.id, user.email || '');
