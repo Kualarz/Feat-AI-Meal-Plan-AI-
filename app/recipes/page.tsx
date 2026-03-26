@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
@@ -26,6 +26,10 @@ interface Recipe {
   proteinG: number | null;
   carbsG?: number | null;
   fatG?: number | null;
+  fiberG?: number | null;
+  sugarG?: number | null;
+  sodiumMg?: number | null;
+  ingredientsJson?: string | null;
   imageUrl: string | null;
   tags: string | null;
 }
@@ -46,7 +50,12 @@ export default function RecipesPage() {
     vegan: false,
     halal: false,
     maxTime: '',
+    minTime: '',
     maxPrice: '',
+    mainIngredients: [] as string[],
+    cuisines: [] as string[],
+    dishTypes: [] as string[],
+    nutritionTags: [] as string[],
   });
 
   const handleYoutubeImportSuccess = (recipeId: string) => {
@@ -127,12 +136,80 @@ export default function RecipesPage() {
       );
     }
 
-    if (filters.maxTime) {
-      filtered = filtered.filter((r) => r.timeMins && r.timeMins <= Number(filters.maxTime));
+    if (filters.minTime) {
+      filtered = filtered.filter((r) => r.timeMins != null && r.timeMins > 60);
+    } else if (filters.maxTime) {
+      filtered = filtered.filter((r) => r.timeMins != null && r.timeMins <= Number(filters.maxTime));
     }
 
     if (filters.maxPrice) {
       filtered = filtered.filter((r) => r.estimatedPrice && r.estimatedPrice <= Number(filters.maxPrice));
+    }
+
+    if (filters.mainIngredients.length > 0) {
+      filtered = filtered.filter((r) => {
+        const tagsLower = (r.tags || '').toLowerCase();
+        let firstIngredientName = '';
+        if (r.ingredientsJson) {
+          try {
+            const parsed = JSON.parse(r.ingredientsJson);
+            if (Array.isArray(parsed) && parsed.length > 0) {
+              firstIngredientName = (parsed[0].name || '').toLowerCase();
+            }
+          } catch (_) {}
+        }
+        return filters.mainIngredients.some(
+          (ing) =>
+            tagsLower.includes(ing.toLowerCase()) ||
+            firstIngredientName.includes(ing.toLowerCase())
+        );
+      });
+    }
+
+    if (filters.cuisines.length > 0) {
+      filtered = filtered.filter((r) =>
+        r.cuisine != null && filters.cuisines.some((c) => c.toLowerCase() === r.cuisine!.toLowerCase())
+      );
+    }
+
+    if (filters.dishTypes.length > 0) {
+      filtered = filtered.filter((r) => {
+        const tagsLower = (r.tags || '').toLowerCase();
+        return filters.dishTypes.some((dt) => tagsLower.includes(dt.toLowerCase()));
+      });
+    }
+
+    if (filters.nutritionTags.length > 0) {
+      filtered = filtered.filter((r) =>
+        filters.nutritionTags.every((tag) => {
+          switch (tag) {
+            case 'Low Carb':
+              return r.carbsG != null && r.carbsG < 30;
+            case 'High Protein':
+              return r.proteinG != null && r.proteinG > 25;
+            case 'Low Fat':
+              return r.fatG != null && r.fatG < 10;
+            case 'Low Sodium':
+              return r.sodiumMg != null && r.sodiumMg < 600;
+            case 'Low Cholesterol':
+              return r.sodiumMg != null && r.sodiumMg < 400;
+            case 'High Fiber':
+              return r.fiberG != null && r.fiberG > 5;
+            case 'Low Sugar':
+              return r.sugarG != null && r.sugarG < 5;
+            case 'Well Balanced':
+              return (
+                r.kcal != null &&
+                r.kcal >= 300 &&
+                r.kcal <= 700 &&
+                r.proteinG != null &&
+                r.proteinG > 15
+              );
+            default:
+              return true;
+          }
+        })
+      );
     }
 
     setFilteredRecipes(filtered);
@@ -189,7 +266,7 @@ export default function RecipesPage() {
 
           {/* Tab Content */}
           <div className="flex-1 overflow-y-auto">
-            {tab === 'browse' && <RecipeBrowseTab recipes={filteredRecipes} loading={loading} filters={filters} handleFilterChange={handleFilterChange} handleDietToggle={handleDietToggle} youtubeModalOpen={youtubeModalOpen} setYoutubeModalOpen={setYoutubeModalOpen} />}
+            {tab === 'browse' && <RecipeBrowseTab recipes={filteredRecipes} loading={loading} filters={filters} handleFilterChange={handleFilterChange} handleDietToggle={handleDietToggle} setFilters={setFilters} youtubeModalOpen={youtubeModalOpen} setYoutubeModalOpen={setYoutubeModalOpen} />}
             {tab === 'add' && <AddRecipeTab onSuccess={(id) => { setTab('browse'); router.push(`/recipes/${id}`); }} />}
             {tab === 'import' && <ImportRecipeTab onSuccess={(id) => { setTab('browse'); router.push(`/recipes/${id}`); }} />}
           </div>
@@ -207,14 +284,96 @@ export default function RecipesPage() {
 }
 
 // Browse Tab Component
+
+const CUISINE_GROUPS: { continent: string; cuisines: string[] }[] = [
+  {
+    continent: 'Asia',
+    cuisines: [
+      'Cambodian', 'Thai', 'Vietnamese', 'Indonesian', 'Malaysian', 'Filipino',
+      'Chinese', 'Japanese', 'Korean', 'Indian', 'Sri Lankan', 'Burmese', 'Laotian',
+    ],
+  },
+  {
+    continent: 'Middle East',
+    cuisines: ['Lebanese', 'Turkish', 'Persian', 'Israeli', 'Moroccan'],
+  },
+  {
+    continent: 'Europe',
+    cuisines: ['Italian', 'French', 'Spanish', 'Greek', 'British', 'German', 'Eastern European'],
+  },
+  {
+    continent: 'Americas',
+    cuisines: ['American', 'Mexican', 'Brazilian', 'Peruvian', 'Caribbean'],
+  },
+  { continent: 'Oceania', cuisines: ['Australian', 'New Zealand'] },
+  { continent: 'Africa', cuisines: ['Ethiopian', 'Nigerian', 'South African', 'Egyptian'] },
+];
+
+const MAIN_INGREDIENTS = [
+  'Chicken', 'Beef', 'Pork', 'Fish', 'Shrimp', 'Tofu', 'Eggs',
+  'Rice', 'Noodles', 'Pasta', 'Potato', 'Mushroom', 'Tomato',
+  'Spinach', 'Broccoli', 'Carrot', 'Onion', 'Garlic', 'Ginger', 'Coconut Milk',
+];
+
+const DISH_TYPES = [
+  'Appetizer', 'Breakfast', 'Brunch', 'Burrito', 'Cake', 'Casserole', 'Curry',
+  'Dessert', 'Dip', 'Dumpling', 'Fried Rice', 'Grilled', 'Noodles', 'Pasta',
+  'Pizza', 'Porridge', 'Salad', 'Sandwich', 'Seafood', 'Smoothie', 'Soup',
+  'Stew', 'Stir-fry', 'Sushi', 'Tacos', 'Wrap',
+];
+
+const NUTRITION_TAGS = [
+  'Low Carb', 'High Protein', 'Low Fat', 'Low Sodium',
+  'Low Cholesterol', 'High Fiber', 'Low Sugar', 'Well Balanced',
+];
+
+const COOK_TIME_OPTIONS = [
+  { label: '30 minutes or less', maxTime: '30', minTime: '' },
+  { label: '45 minutes or less', maxTime: '45', minTime: '' },
+  { label: '1 hour or less', maxTime: '60', minTime: '' },
+  { label: 'More than 1 hour', maxTime: '', minTime: '61' },
+];
+
 interface RecipeBrowseTabProps {
   recipes: Recipe[];
   loading: boolean;
   filters: any;
   handleFilterChange: (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => void;
   handleDietToggle: (dietType: 'vegetarian' | 'vegan' | 'halal') => void;
+  setFilters: React.Dispatch<React.SetStateAction<any>>;
   youtubeModalOpen: boolean;
   setYoutubeModalOpen: (open: boolean) => void;
+}
+
+function CollapsibleSection({
+  title,
+  children,
+}: {
+  title: string;
+  children: React.ReactNode;
+}) {
+  const [open, setOpen] = useState(true);
+  return (
+    <div className="border-b border-border last:border-b-0">
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        className="w-full flex items-center justify-between py-3 px-4 text-sm font-semibold text-foreground hover:bg-muted/50 transition-colors"
+      >
+        <span>{title}</span>
+        <svg
+          className={`w-4 h-4 text-muted-foreground transition-transform duration-200 ${open ? 'rotate-180' : ''}`}
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+          strokeWidth={2}
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+        </svg>
+      </button>
+      {open && <div className="px-4 pb-4">{children}</div>}
+    </div>
+  );
 }
 
 function RecipeBrowseTab({
@@ -222,178 +381,436 @@ function RecipeBrowseTab({
   loading,
   filters,
   handleFilterChange,
-  handleDietToggle,
+  setFilters,
   youtubeModalOpen,
   setYoutubeModalOpen,
 }: RecipeBrowseTabProps) {
+  const [panelOpen, setPanelOpen] = useState(false);
+  const [ingredientSearch, setIngredientSearch] = useState('');
+  const panelRef = useRef<HTMLDivElement>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
+
+  // Close panel on click outside
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (
+        panelRef.current &&
+        !panelRef.current.contains(e.target as Node) &&
+        buttonRef.current &&
+        !buttonRef.current.contains(e.target as Node)
+      ) {
+        setPanelOpen(false);
+      }
+    };
+    if (panelOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [panelOpen]);
+
+  // Count active filters (excluding q which has its own input)
+  const activeFilterCount = [
+    filters.maxTime || filters.minTime ? 1 : 0,
+    filters.mainIngredients.length,
+    filters.cuisines.length,
+    filters.dishTypes.length,
+    filters.nutritionTags.length,
+  ].reduce((a: number, b: number) => a + b, 0);
+
+  const toggleArrayFilter = (key: string, value: string) => {
+    setFilters((prev: any) => {
+      const current: string[] = prev[key];
+      return {
+        ...prev,
+        [key]: current.includes(value)
+          ? current.filter((v: string) => v !== value)
+          : [...current, value],
+      };
+    });
+  };
+
+  const clearAllFilters = () => {
+    setFilters((prev: any) => ({
+      ...prev,
+      q: '',
+      maxTime: '',
+      minTime: '',
+      mainIngredients: [],
+      cuisines: [],
+      dishTypes: [],
+      nutritionTags: [],
+    }));
+  };
+
+  const selectedCookTime = COOK_TIME_OPTIONS.find(
+    (o) => o.maxTime === filters.maxTime && o.minTime === filters.minTime
+  );
+
+  const setCookTime = (option: typeof COOK_TIME_OPTIONS[0] | null) => {
+    setFilters((prev: any) => ({
+      ...prev,
+      maxTime: option ? option.maxTime : '',
+      minTime: option ? option.minTime : '',
+    }));
+  };
+
+  // Build active chip list
+  type Chip = { label: string; onRemove: () => void };
+  const activeChips: Chip[] = [];
+
+  if (selectedCookTime) {
+    activeChips.push({
+      label: selectedCookTime.label,
+      onRemove: () => setCookTime(null),
+    });
+  }
+  filters.mainIngredients.forEach((ing: string) => {
+    activeChips.push({
+      label: ing,
+      onRemove: () => toggleArrayFilter('mainIngredients', ing),
+    });
+  });
+  filters.cuisines.forEach((c: string) => {
+    activeChips.push({
+      label: c,
+      onRemove: () => toggleArrayFilter('cuisines', c),
+    });
+  });
+  filters.dishTypes.forEach((dt: string) => {
+    activeChips.push({
+      label: dt,
+      onRemove: () => toggleArrayFilter('dishTypes', dt),
+    });
+  });
+  filters.nutritionTags.forEach((nt: string) => {
+    activeChips.push({
+      label: nt,
+      onRemove: () => toggleArrayFilter('nutritionTags', nt),
+    });
+  });
+
+  const filteredIngredients = MAIN_INGREDIENTS.filter((ing) =>
+    ing.toLowerCase().includes(ingredientSearch.toLowerCase())
+  );
+
   return (
-    <div className="p-8 max-w-7xl mx-auto w-full">
-      <div className="flex gap-8">
-        {/* Filters Sidebar */}
-        <aside className="hidden lg:block w-64 flex-shrink-0">
-          <Card>
-            <h2 className="text-lg font-semibold text-foreground mb-4">Filters</h2>
-            <div className="space-y-4">
-              <Input
-                label="Search"
-                type="text"
-                name="q"
-                value={filters.q}
-                onChange={handleFilterChange}
-                placeholder="Search recipes..."
-              />
+    <div className="p-4 md:p-8 max-w-7xl mx-auto w-full">
+      {/* Top bar: search + filter button */}
+      <div className="flex gap-3 items-center mb-3">
+        {/* Search bar */}
+        <div className="flex-1 relative">
+          <span className="absolute inset-y-0 left-3 flex items-center pointer-events-none text-muted-foreground">
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z" />
+            </svg>
+          </span>
+          <input
+            type="text"
+            name="q"
+            value={filters.q}
+            onChange={handleFilterChange}
+            placeholder="Search recipes..."
+            className="w-full pl-9 pr-4 py-2.5 border border-border rounded-xl bg-background text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary text-sm"
+          />
+        </div>
 
-              <Select
-                label="Cuisine"
-                name="cuisine"
-                value={filters.cuisine}
-                onChange={handleFilterChange}
-                options={[
-                  { value: '', label: 'All Cuisines' },
-                  { value: 'Cambodian', label: 'Cambodian' },
-                  { value: 'Thai', label: 'Thai' },
-                  { value: 'Vietnamese', label: 'Vietnamese' },
-                  { value: 'Australian', label: 'Australian' },
-                  { value: 'American', label: 'American' },
-                ]}
-              />
+        {/* Filters button */}
+        <div className="relative">
+          <button
+            ref={buttonRef}
+            type="button"
+            onClick={() => setPanelOpen((o) => !o)}
+            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl border text-sm font-medium transition-colors ${
+              panelOpen || activeFilterCount > 0
+                ? 'bg-primary text-primary-foreground border-primary'
+                : 'bg-background border-border text-foreground hover:bg-muted'
+            }`}
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M3 4h18M7 12h10M11 20h2" />
+            </svg>
+            Filters
+            {activeFilterCount > 0 && (
+              <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-white text-primary text-xs font-bold leading-none">
+                {activeFilterCount}
+              </span>
+            )}
+          </button>
 
-              <Select
-                label="Difficulty"
-                name="difficulty"
-                value={filters.difficulty}
-                onChange={handleFilterChange}
-                options={[
-                  { value: '', label: 'All Levels' },
-                  { value: 'easy', label: 'Easy' },
-                  { value: 'medium', label: 'Medium' },
-                  { value: 'hard', label: 'Hard' },
-                ]}
-              />
+          {/* Filter panel */}
+          {panelOpen && (
+            <div
+              ref={panelRef}
+              className="fixed inset-x-4 top-auto z-50 mt-2 bg-card border border-border rounded-2xl shadow-2xl overflow-hidden md:absolute md:inset-x-auto md:right-0 md:w-80"
+              style={{ maxHeight: 'calc(100vh - 200px)' }}
+            >
+              <div className="overflow-y-auto" style={{ maxHeight: 'calc(100vh - 260px)' }}>
+                {/* Cook Time */}
+                <CollapsibleSection title="Cook Time">
+                  <div className="space-y-2">
+                    {COOK_TIME_OPTIONS.map((opt) => {
+                      const isSelected =
+                        filters.maxTime === opt.maxTime && filters.minTime === opt.minTime;
+                      return (
+                        <label key={opt.label} className="flex items-center gap-2 cursor-pointer">
+                          <input
+                            type="radio"
+                            name="cookTime"
+                            checked={isSelected}
+                            onChange={() => setCookTime(isSelected ? null : opt)}
+                            className="w-4 h-4 text-primary border-border"
+                          />
+                          <span className="text-sm text-foreground">{opt.label}</span>
+                        </label>
+                      );
+                    })}
+                  </div>
+                </CollapsibleSection>
 
-              {/* Dietary Preferences */}
-              <div className="border-t border-border pt-4">
-                <p className="text-sm font-semibold text-foreground mb-3">Dietary Preferences</p>
-                <div className="space-y-2">
-                  <label className="flex items-center gap-2 cursor-pointer p-2 rounded hover:bg-muted">
+                {/* Main Ingredient */}
+                <CollapsibleSection title="Main Ingredient">
+                  <div className="mb-2">
                     <input
-                      type="checkbox"
-                      checked={filters.vegetarian}
-                      onChange={() => handleDietToggle('vegetarian')}
-                      className="w-4 h-4 rounded border-border text-primary"
+                      type="text"
+                      placeholder="Search ingredients..."
+                      value={ingredientSearch}
+                      onChange={(e) => setIngredientSearch(e.target.value)}
+                      className="w-full px-3 py-1.5 border border-border rounded-lg bg-background text-foreground placeholder-muted-foreground text-sm focus:outline-none focus:ring-1 focus:ring-primary"
                     />
-                    <span className="text-sm text-foreground">🥦 Vegetarian</span>
-                  </label>
+                  </div>
+                  <div className="max-h-44 overflow-y-auto space-y-1.5 pr-1">
+                    {filteredIngredients.map((ing) => (
+                      <label key={ing} className="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={filters.mainIngredients.includes(ing)}
+                          onChange={() => toggleArrayFilter('mainIngredients', ing)}
+                          className="w-4 h-4 rounded border-border text-primary"
+                        />
+                        <span className="text-sm text-foreground">{ing}</span>
+                      </label>
+                    ))}
+                  </div>
+                </CollapsibleSection>
 
-                  <label className="flex items-center gap-2 cursor-pointer p-2 rounded hover:bg-muted">
-                    <input
-                      type="checkbox"
-                      checked={filters.vegan}
-                      onChange={() => handleDietToggle('vegan')}
-                      className="w-4 h-4 rounded border-border text-primary"
-                    />
-                    <span className="text-sm text-foreground">🌿 Vegan</span>
-                  </label>
+                {/* Cuisine */}
+                <CollapsibleSection title="Cuisine">
+                  <div className="max-h-64 overflow-y-auto space-y-3 pr-1">
+                    {CUISINE_GROUPS.map((group) => (
+                      <div key={group.continent}>
+                        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">
+                          {group.continent}
+                        </p>
+                        <div className="space-y-1.5">
+                          {group.cuisines.map((cuisine) => (
+                            <label key={cuisine} className="flex items-center gap-2 cursor-pointer">
+                              <input
+                                type="checkbox"
+                                checked={filters.cuisines.includes(cuisine)}
+                                onChange={() => toggleArrayFilter('cuisines', cuisine)}
+                                className="w-4 h-4 rounded border-border text-primary"
+                              />
+                              <span className="text-sm text-foreground">{cuisine}</span>
+                            </label>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </CollapsibleSection>
 
-                  <label className="flex items-center gap-2 cursor-pointer p-2 rounded hover:bg-muted">
-                    <input
-                      type="checkbox"
-                      checked={filters.halal}
-                      onChange={() => handleDietToggle('halal')}
-                      className="w-4 h-4 rounded border-border text-primary"
-                    />
-                    <span className="text-sm text-foreground">🕌 Halal</span>
-                  </label>
-                </div>
+                {/* Dish Type */}
+                <CollapsibleSection title="Dish Type">
+                  <div className="max-h-48 overflow-y-auto space-y-1.5 pr-1">
+                    {DISH_TYPES.map((dt) => (
+                      <label key={dt} className="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={filters.dishTypes.includes(dt)}
+                          onChange={() => toggleArrayFilter('dishTypes', dt)}
+                          className="w-4 h-4 rounded border-border text-primary"
+                        />
+                        <span className="text-sm text-foreground">{dt}</span>
+                      </label>
+                    ))}
+                  </div>
+                </CollapsibleSection>
+
+                {/* Nutrition */}
+                <CollapsibleSection title="Nutrition">
+                  <div className="space-y-1.5">
+                    {NUTRITION_TAGS.map((nt) => (
+                      <label key={nt} className="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={filters.nutritionTags.includes(nt)}
+                          onChange={() => toggleArrayFilter('nutritionTags', nt)}
+                          className="w-4 h-4 rounded border-border text-primary"
+                        />
+                        <span className="text-sm text-foreground">{nt}</span>
+                      </label>
+                    ))}
+                  </div>
+                </CollapsibleSection>
               </div>
 
-              <Input
-                label="Max Time (minutes)"
-                type="number"
-                name="maxTime"
-                value={filters.maxTime}
-                onChange={handleFilterChange}
-                placeholder="e.g., 30"
-              />
-
-              <Input
-                label="Max Price ($)"
-                type="number"
-                name="maxPrice"
-                value={filters.maxPrice}
-                onChange={handleFilterChange}
-                placeholder="e.g., 5"
-              />
-            </div>
-          </Card>
-        </aside>
-
-        {/* Recipes Grid */}
-        <div className="flex-1">
-          {loading ? (
-            <div className="text-center py-12 text-muted-foreground">Loading recipes...</div>
-          ) : recipes.length === 0 ? (
-            <Card className="text-center py-12">
-              <div className="text-6xl mb-4">🍜</div>
-              <h3 className="text-xl font-semibold text-foreground mb-2">No recipes found</h3>
-              <p className="text-muted-foreground">Try adjusting your filters</p>
-            </Card>
-          ) : (
-            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {recipes.map((recipe) => (
-                <Link key={recipe.id} href={`/recipes/${recipe.id}`}>
-                  <Card className="h-full hover:shadow-lg transition-shadow cursor-pointer">
-                    {recipe.imageUrl && (
-                      <div className="w-full h-48 bg-muted rounded-xl mb-4 overflow-hidden relative">
-                        <Image
-                          src={recipe.imageUrl}
-                          alt={recipe.title}
-                          fill
-                          className="object-cover"
-                          sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                          priority={false}
-                        />
-                      </div>
-                    )}
-                    <h3 className="font-semibold text-foreground mb-2">{recipe.title}</h3>
-                    {recipe.description && (
-                      <p className="text-sm text-muted-foreground mb-3 line-clamp-2">
-                        {recipe.description}
-                      </p>
-                    )}
-
-                    <div className="flex flex-wrap gap-2 mb-3">
-                      {recipe.cuisine && (
-                        <span className="px-2 py-1 bg-primary/10 text-primary rounded-lg text-xs font-medium">
-                          {recipe.cuisine}
-                        </span>
-                      )}
-                      {recipe.difficulty && (
-                        <span className="px-2 py-1 bg-primary/10 text-primary rounded-lg text-xs font-medium capitalize">
-                          {recipe.difficulty}
-                        </span>
-                      )}
-                    </div>
-
-                    <div className="space-y-1 text-sm text-muted-foreground">
-                      {recipe.timeMins && <div>⏱️ {recipe.timeMins} min</div>}
-                      {recipe.kcal && <div>🔥 {recipe.kcal} kcal</div>}
-                      {recipe.proteinG && <div>💪 {recipe.proteinG}g protein</div>}
-                      {recipe.carbsG && <div>🍚 {recipe.carbsG}g carbs</div>}
-                      {recipe.fatG && <div>🥑 {recipe.fatG}g fat</div>}
-                      {recipe.estimatedPrice && (
-                        <div className="font-semibold text-foreground">
-                          💰 ${recipe.estimatedPrice.toFixed(2)}
-                        </div>
-                      )}
-                    </div>
-                  </Card>
-                </Link>
-              ))}
+              {/* Panel bottom bar */}
+              <div className="flex gap-2 p-3 border-t border-border bg-card">
+                <button
+                  type="button"
+                  onClick={clearAllFilters}
+                  className="flex-1 py-2 rounded-lg border border-border text-sm font-medium text-foreground hover:bg-muted transition-colors"
+                >
+                  Clear All
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPanelOpen(false)}
+                  className="flex-1 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 transition-opacity"
+                >
+                  Apply
+                </button>
+              </div>
             </div>
           )}
         </div>
       </div>
+
+      {/* Active filter chips */}
+      {activeChips.length > 0 && (
+        <div className="flex flex-wrap gap-2 mb-4">
+          {activeChips.map((chip) => (
+            <span
+              key={chip.label}
+              className="inline-flex items-center gap-1 px-2.5 py-1 bg-primary/10 text-primary rounded-full text-xs font-medium"
+            >
+              {chip.label}
+              <button
+                type="button"
+                onClick={chip.onRemove}
+                className="ml-0.5 hover:text-primary/70 transition-colors"
+                aria-label={`Remove ${chip.label} filter`}
+              >
+                <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </span>
+          ))}
+          <button
+            type="button"
+            onClick={clearAllFilters}
+            className="text-xs text-muted-foreground hover:text-foreground underline underline-offset-2 transition-colors"
+          >
+            Clear all
+          </button>
+        </div>
+      )}
+
+      {/* Recipe count */}
+      {!loading && (
+        <p className="text-sm text-muted-foreground mb-5">
+          {recipes.length} {recipes.length === 1 ? 'recipe' : 'recipes'} found
+        </p>
+      )}
+
+      {/* Recipes Grid */}
+      {loading ? (
+        <div className="text-center py-16 text-muted-foreground">Loading recipes...</div>
+      ) : recipes.length === 0 ? (
+        <Card className="text-center py-16">
+          <div className="text-6xl mb-4">🍜</div>
+          <h3 className="text-xl font-semibold text-foreground mb-2">No recipes found</h3>
+          <p className="text-muted-foreground">Try adjusting your filters or search query</p>
+        </Card>
+      ) : (
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+          {recipes.map((recipe) => (
+            <Link key={recipe.id} href={`/recipes/${recipe.id}`} className="group">
+              <div className="bg-card border border-border rounded-2xl overflow-hidden h-full hover:shadow-lg hover:border-primary/30 transition-all duration-200 cursor-pointer flex flex-col">
+                {/* Image area */}
+                <div className="relative w-full h-44 bg-muted flex-shrink-0">
+                  {recipe.imageUrl ? (
+                    <Image
+                      src={recipe.imageUrl}
+                      alt={recipe.title}
+                      fill
+                      className="object-cover"
+                      sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
+                      priority={false}
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-4xl text-muted-foreground/40">
+                      🍽️
+                    </div>
+                  )}
+                  {/* Time badge */}
+                  {recipe.timeMins && (
+                    <span className="absolute top-2 right-2 flex items-center gap-1 px-2 py-0.5 bg-black/60 text-white rounded-full text-xs font-medium backdrop-blur-sm">
+                      ⏱ {recipe.timeMins}min
+                    </span>
+                  )}
+                </div>
+
+                {/* Card body */}
+                <div className="p-4 flex flex-col flex-1">
+                  <h3 className="font-semibold text-foreground mb-1 line-clamp-2 group-hover:text-primary transition-colors text-sm leading-snug">
+                    {recipe.title}
+                  </h3>
+
+                  {recipe.description && (
+                    <p className="text-xs text-muted-foreground mb-3 line-clamp-2 leading-relaxed">
+                      {recipe.description}
+                    </p>
+                  )}
+
+                  {/* Cuisine + diet tags */}
+                  <div className="flex flex-wrap gap-1.5 mb-3">
+                    {recipe.cuisine && (
+                      <span className="px-2 py-0.5 bg-primary/15 text-primary rounded-full text-xs font-medium">
+                        {recipe.cuisine}
+                      </span>
+                    )}
+                    {recipe.dietTags &&
+                      recipe.dietTags
+                        .split(',')
+                        .slice(0, 3)
+                        .map((tag) => tag.trim())
+                        .filter(Boolean)
+                        .map((tag) => (
+                          <span
+                            key={tag}
+                            className="px-2 py-0.5 bg-muted text-muted-foreground rounded-full text-xs"
+                          >
+                            {tag}
+                          </span>
+                        ))}
+                  </div>
+
+                  {/* Stats row */}
+                  <div className="mt-auto flex items-center gap-3 text-xs text-muted-foreground">
+                    {recipe.kcal && (
+                      <span className="flex items-center gap-0.5">
+                        🔥 <span>{recipe.kcal} kcal</span>
+                      </span>
+                    )}
+                    {recipe.proteinG && (
+                      <span className="flex items-center gap-0.5">
+                        💪 <span>{recipe.proteinG}g</span>
+                      </span>
+                    )}
+                    {recipe.estimatedPrice && (
+                      <span className="ml-auto font-semibold text-foreground">
+                        ${recipe.estimatedPrice.toFixed(2)}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </Link>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

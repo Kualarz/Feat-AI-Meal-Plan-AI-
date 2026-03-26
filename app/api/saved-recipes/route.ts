@@ -19,9 +19,21 @@ export async function GET(request: NextRequest) {
       where: { id: { in: recipeIds } },
     });
 
-    // Preserve saved order
+    // Preserve saved order and attach collectionId
+    const savedMap = new Map(saved.map((s) => [s.recipeId, s]));
     const recipeMap = new Map(recipes.map((r) => [r.id, r]));
-    const ordered = recipeIds.map((id) => recipeMap.get(id)).filter(Boolean);
+    const ordered = recipeIds
+      .map((id) => {
+        const recipe = recipeMap.get(id);
+        const savedEntry = savedMap.get(id);
+        if (!recipe || !savedEntry) return null;
+        return {
+          ...recipe,
+          collectionId: (savedEntry as any).collectionId ?? null,
+          savedRecipeId: savedEntry.id,
+        };
+      })
+      .filter(Boolean);
 
     return NextResponse.json(ordered);
   } catch (error) {

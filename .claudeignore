@@ -1,0 +1,34 @@
+# Dependencies
+node_modules/
+.pnp/
+.pnp.js
+
+# Build Artifacts
+.next/
+out/
+build/
+dist/
+
+# Testing
+coverage/
+playwright-report/
+test-results/
+
+# Environment and Logs
+.env
+.env*.local
+*.log
+npm-debug.log*
+
+# IDE and Session Data
+.vscode/
+.claude/agents/
+.claude/worktrees/
+
+# Database
+prisma/*.db
+prisma/*.db-journal
+
+# Assets
+public/images/
+public/videos/

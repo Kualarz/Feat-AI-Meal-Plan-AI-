@@ -1,13 +1,14 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Navbar } from '@/components/Navbar';
 import { MainNavigation } from '@/components/MainNavigation';
 import { Button } from '@/components/Button';
-import { Select } from '@/components/Select';
 import { Card } from '@/components/Card';
 import { Input } from '@/components/Input';
+import { Select } from '@/components/Select';
 import { AggregatedIngredient, GroceryCategory, groupByCategory, toCsv } from '@/lib/groceries';
 
 interface Plan {
@@ -43,7 +44,10 @@ const CATEGORY_EMOJI: Record<GroceryCategory, string> = {
   Other: '📦',
 };
 
-export default function GroceriesPage() {
+function GroceriesPageInner() {
+  const searchParams = useSearchParams();
+  const urlPlanId = searchParams.get('planId');
+
   const [plans, setPlans] = useState<Plan[]>([]);
   const [selectedPlanId, setSelectedPlanId] = useState<string>('');
   const [ingredients, setIngredients] = useState<AggregatedIngredient[]>([]);
@@ -209,7 +213,9 @@ export default function GroceriesPage() {
       const data = await response.json();
       setPlans(data.plans || []);
       if (data.plans && data.plans.length > 0) {
-        setSelectedPlanId(data.plans[0].id);
+        // Use plan from URL param, or default to latest
+        const target = urlPlanId && data.plans.find((p: Plan) => p.id === urlPlanId);
+        setSelectedPlanId(target ? target.id : data.plans[0].id);
       }
       setError('');
     } catch (err) {
@@ -747,5 +753,13 @@ export default function GroceriesPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function GroceriesPage() {
+  return (
+    <Suspense>
+      <GroceriesPageInner />
+    </Suspense>
   );
 }

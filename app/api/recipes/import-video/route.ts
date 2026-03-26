@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { handleAPIError } from '@/lib/api-errors';
-import { extractRecipeFromVideo } from '@/lib/gemini';
+import { generateRecipeFromVideo } from '@/lib/gemini';
 
 function detectPlatform(url: string): 'tiktok' | 'instagram' | 'facebook' | 'unknown' {
   if (url.includes('tiktok.com')) return 'tiktok';

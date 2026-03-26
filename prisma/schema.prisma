@@ -19,15 +19,28 @@ model User {
   preferences Preference[]
   plans     Plan[]
   savedRecipes        SavedRecipe[]
+  collections         Collection[]
   passwordResetTokens PasswordResetToken[]
 }
 
+model Collection {
+  id           String        @id @default(cuid())
+  userId       String
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name         String
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  savedRecipes SavedRecipe[]
+}
+
 model SavedRecipe {
-  id        String   @id @default(cuid())
-  userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  recipeId  String
-  createdAt DateTime @default(now())
+  id           String      @id @default(cuid())
+  userId       String
+  user         User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  recipeId     String
+  collectionId String?
+  collection   Collection? @relation(fields: [collectionId], references: [id], onDelete: SetNull)
+  createdAt    DateTime    @default(now())
 
   @@unique([userId, recipeId])
 }

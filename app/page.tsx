@@ -1,10 +1,21 @@
 'use client';
 
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/Button';
 import { Navbar } from '@/components/Navbar';
 
 export default function HomePage() {
+  const router = useRouter();
+
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (token) {
+      router.replace('/recipes');
+    }
+  }, [router]);
+
   return (
     <div className="min-h-screen bg-background">
       <Navbar />

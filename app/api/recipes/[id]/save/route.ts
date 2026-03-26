@@ -29,6 +29,28 @@ export async function POST(
   }
 }
 
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  try {
+    const user = requireAuth(request);
+    if (!user) return createUnauthorizedResponse();
+
+    const { collectionId } = await request.json();
+
+    const updated = await db.savedRecipe.updateMany({
+      where: { userId: user.userId, recipeId: params.id },
+      data: { collectionId: collectionId ?? null } as any,
+    });
+
+    return NextResponse.json({ success: true, updated });
+  } catch (error) {
+    const { statusCode, response } = handleAPIError(error, 'Failed to update collection');
+    return NextResponse.json(response, { status: statusCode });
+  }
+}
+
 export async function DELETE(
   request: NextRequest,
   { params }: { params: { id: string } }

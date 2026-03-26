@@ -6,6 +6,11 @@ import { Footer } from '@/components/Footer';
 export const metadata: Metadata = {
   title: "Feast AI | AI Meal Plan & Nutrition Optimization",
   description: "Create personalized meal plans with AI-powered nutrition optimization",
+  manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    title: "Feast AI",
+  },
 };
 
 export default function RootLayout({

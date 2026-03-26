@@ -1,4 +1,6 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
+import { db } from '@/lib/db';
+import { requireAuth } from '@/lib/auth-middleware';
 
 const sampleRecipes = [
   // ============================================
@@ -1064,9 +1066,59 @@ const enrichedRecipes = sampleRecipes.map((recipe) => ({
   cookwareJson: JSON.stringify(cookwareMap[recipe.id] || []),
 }));
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
-    return NextResponse.json(enrichedRecipes);
+    let recipes = [...enrichedRecipes];
+
+    // Optionally filter by user preferences if signed in
+    const user = requireAuth(request);
+    if (user) {
+      const prefs = await db.preference.findFirst({
+        where: { userId: user.userId },
+        orderBy: { updatedAt: 'desc' },
+      });
+
+      if (prefs) {
+        const allergenList = (prefs.allergens || '').split(',').map((a: string) => a.trim().toLowerCase()).filter(Boolean);
+        const dislikeList = (prefs.dislikes || '').split(',').map((d: string) => d.trim().toLowerCase()).filter(Boolean);
+        const cuisineList = (prefs.cuisines || '').split(',').map((c: string) => c.trim().toLowerCase()).filter(Boolean);
+
+        // Hard filters: dietary flags
+        if (prefs.halalEnabled) {
+          recipes = recipes.filter(r => r.dietTags?.toLowerCase().includes('halal'));
+        }
+        if (prefs.veganEnabled) {
+          recipes = recipes.filter(r => r.dietTags?.toLowerCase().includes('vegan'));
+        } else if (prefs.vegetarianEnabled) {
+          recipes = recipes.filter(r => r.dietTags?.toLowerCase().includes('vegetarian'));
+        }
+
+        // Hard filters: allergens and dislikes — exclude recipes containing them in ingredients
+        if (allergenList.length > 0 || dislikeList.length > 0) {
+          const excludeTerms = [...allergenList, ...dislikeList];
+          recipes = recipes.filter(r => {
+            try {
+              const ingredients: Array<{ name: string }> = JSON.parse(r.ingredientsJson || '[]');
+              const ingredientNames = ingredients.map(i => i.name.toLowerCase()).join(' ');
+              return !excludeTerms.some(term => ingredientNames.includes(term));
+            } catch {
+              return true;
+            }
+          });
+        }
+
+        // Soft sort: preferred cuisines bubble to top
+        if (cuisineList.length > 0) {
+          recipes.sort((a, b) => {
+            const aMatch = cuisineList.includes((a.cuisine || '').toLowerCase()) ? 0 : 1;
+            const bMatch = cuisineList.includes((b.cuisine || '').toLowerCase()) ? 0 : 1;
+            return aMatch - bMatch;
+          });
+        }
+      }
+    }
+
+    return NextResponse.json(recipes);
   } catch (error) {
     console.error('Error fetching recipes:', error);
     return NextResponse.json(

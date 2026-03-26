@@ -3,28 +3,37 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
 
 const RECIPE_JSON_SCHEMA = `{
-  "title": "string - recipe name",
+  "title": "string",
   "description": "string - 2-3 sentence appetizing description",
   "cuisine": "string - e.g. Thai, Cambodian, Italian",
-  "difficulty": "easy | medium | hard",
-  "timeMins": "number",
-  "estimatedPrice": "number",
+  "difficulty": "easy|medium|hard",
+  "timeMins": number,
+  "estimatedPrice": number,
   "currency": "string - e.g. USD, KHR",
-  "kcal": "number",
-  "proteinG": "number",
-  "carbsG": "number",
-  "fatG": "number",
-  "fiberG": "number",
-  "sugarG": "number",
-  "sodiumMg": "number",
+  "kcal": number,
+  "proteinG": number,
+  "carbsG": number,
+  "fatG": number,
+  "fiberG": number,
+  "sugarG": number,
+  "sodiumMg": number,
   "dietTags": "string - comma-separated e.g. halal,gluten-free",
-  "ingredients": [{ "name": "string", "qty": "string", "unit": "string", "notes": "string" }],
-  "steps": "string - step-by-step in markdown with ## headings",
+  "ingredients": [{ "name": "string", "qty": "string", "unit": "string", "notes": "string", "est_cost": number }],
+  "steps": "string - step-by-step in markdown with numbered steps",
   "safety": "string - food safety tips in markdown",
   "cookware": ["string"],
   "tags": "string - comma-separated",
-  "imageUrl": "string | null"
+  "imageUrl": "string|null"
 }`;
+
+const MODEL_CONFIG = {
+  model: 'gemini-1.5-flash',
+  generationConfig: {
+    responseMimeType: 'application/json',
+    temperature: 0,
+    maxOutputTokens: 2048,
+  } as any,
+};
 
 export async function extractRecipeFromHtml(
   html: string,
@@ -32,25 +41,17 @@ export async function extractRecipeFromHtml(
   dietFlags: { vegetarian: boolean; vegan: boolean; halal: boolean },
   currency: string
 ): Promise<any> {
-  const model = genAI.getGenerativeModel({
-    model: 'gemini-1.5-flash',
-    generationConfig: { responseMimeType: 'application/json' } as any,
-  });
+  const model = genAI.getGenerativeModel(MODEL_CONFIG);
 
-  const prompt = `Extract recipe information from this webpage HTML and return a complete recipe as JSON.
+  const flags = `halal=${dietFlags.halal ? 1 : 0} veg=${dietFlags.vegetarian ? 1 : 0} vegan=${dietFlags.vegan ? 1 : 0}`;
 
+  const prompt = `Extract recipe from HTML. ${flags} currency=${currency} region=SEA.
 URL: ${url}
-HTML (first 8000 chars): ${html.substring(0, 8000)}
-
-Diet requirements: vegetarian=${dietFlags.vegetarian}, vegan=${dietFlags.vegan}, halal=${dietFlags.halal}
-Estimate price in ${currency} for SEA region.
-
-Return JSON matching this exact schema:
-${RECIPE_JSON_SCHEMA}`;
+HTML: ${html.substring(0, 6000)}
+Return JSON matching schema: ${RECIPE_JSON_SCHEMA}`;
 
   const result = await model.generateContent(prompt);
-  const text = result.response.text();
-  return JSON.parse(text);
+  return JSON.parse(result.response.text());
 }
 
 export async function extractRecipeFromVideo(
@@ -59,25 +60,34 @@ export async function extractRecipeFromVideo(
   metadata: { title: string; description: string; imageUrl: string | null },
   currency: string
 ): Promise<any> {
-  const model = genAI.getGenerativeModel({
-    model: 'gemini-1.5-flash',
-    generationConfig: { responseMimeType: 'application/json' } as any,
-  });
+  const model = genAI.getGenerativeModel(MODEL_CONFIG);
 
-  const prompt = `A user shared a ${platform} food video. Generate a complete, detailed recipe based on the available metadata.
-
-Platform: ${platform}
-Video URL: ${url}
-Video title: ${metadata.title || 'Not available'}
-Video caption/description: ${metadata.description || 'Not available'}
-
-Use all clues from the title and caption to identify the dish. Generate a realistic, detailed recipe.
-Estimate price in ${currency}.
-
-Return JSON matching this exact schema:
-${RECIPE_JSON_SCHEMA}`;
+  const prompt = `Generate detailed recipe from ${platform} food video. currency=${currency} region=SEA.
+title: ${(metadata.title || '').substring(0, 200)}
+caption: ${(metadata.description || '').substring(0, 1000)}
+url: ${url}
+Return JSON matching schema: ${RECIPE_JSON_SCHEMA}`;
 
   const result = await model.generateContent(prompt);
-  const text = result.response.text();
-  return JSON.parse(text);
+  return JSON.parse(result.response.text());
+}
+
+export { extractRecipeFromVideo as generateRecipeFromVideo };
+
+export async function extractRecipeFromYouTube(
+  youtubeUrl: string,
+  videoTitle: string,
+  videoDescription: string,
+  currency: string
+): Promise<any> {
+  const model = genAI.getGenerativeModel(MODEL_CONFIG);
+
+  const prompt = `Generate detailed recipe from YouTube video. currency=${currency} region=SEA.
+title: ${(videoTitle || '').substring(0, 200)}
+description: ${(videoDescription || '').substring(0, 1000)}
+url: ${youtubeUrl}
+Return JSON matching schema: ${RECIPE_JSON_SCHEMA}`;
+
+  const result = await model.generateContent(prompt);
+  return JSON.parse(result.response.text());
 }

@@ -1,0 +1,25 @@
+{
+  "version": 1,
+  "skills": {
+    "nextjs-app-router-patterns": {
+      "source": "wshobson/agents",
+      "sourceType": "github",
+      "computedHash": "04c1df896cc2c9ef824d618b95d21686c5b8e24e5cb32b3d6fe9d97d4b661536"
+    },
+    "nextjs-best-practices": {
+      "source": "sickn33/antigravity-awesome-skills",
+      "sourceType": "github",
+      "computedHash": "f57b0625e5e9e64dc9f3d7333c81e73f445fd9c65fe7cd0fd99a779a2e78dffd"
+    },
+    "prisma-database-setup": {
+      "source": "prisma/skills",
+      "sourceType": "github",
+      "computedHash": "72e2360923e949261a15ca1dbcfac5662ec5e851f6045ffb13163a55a083bcea"
+    },
+    "prisma-expert": {
+      "source": "sickn33/antigravity-awesome-skills",
+      "sourceType": "github",
+      "computedHash": "8f5561068b807ddc6aced10b98110229eeb3803bb04cccd0b5f58bf97751d231"
+    }
+  }
+}

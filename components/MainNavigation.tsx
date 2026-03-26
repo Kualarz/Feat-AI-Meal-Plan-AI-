@@ -24,6 +24,17 @@ export function MainNavigation({ className = '' }: MainNavigationProps) {
           </p>
           <div className="space-y-1">
             <Link
+              href="/library"
+              className={`block px-3 py-2 rounded-lg transition-colors ${
+                isActive('/library')
+                  ? 'bg-primary text-primary-foreground'
+                  : 'text-foreground hover:bg-muted'
+              }`}
+            >
+              <span className="text-lg mr-2">🏠</span>
+              Home
+            </Link>
+            <Link
               href="/recipes"
               className={`block px-3 py-2 rounded-lg transition-colors ${
                 isActive('/recipes')
@@ -33,17 +44,6 @@ export function MainNavigation({ className = '' }: MainNavigationProps) {
             >
               <span className="text-lg mr-2">🍜</span>
               Recipe Browser
-            </Link>
-            <Link
-              href="/saved-recipes"
-              className={`block px-3 py-2 rounded-lg transition-colors ${
-                isActive('/saved-recipes')
-                  ? 'bg-primary text-primary-foreground'
-                  : 'text-foreground hover:bg-muted'
-              }`}
-            >
-              <span className="text-lg mr-2">❤️</span>
-              Saved Recipes
             </Link>
             <Link
               href="/planner"

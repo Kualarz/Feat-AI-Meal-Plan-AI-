@@ -232,6 +232,18 @@ export default function RecipeDetailPage() {
       }
       const data = await response.json();
       setRecipe(data);
+      // Track recently viewed
+      try {
+        const raw = localStorage.getItem('recentlyViewed');
+        const existing: any[] = raw ? JSON.parse(raw) : [];
+        const entry = {
+          id: data.id, title: data.title, imageUrl: data.imageUrl,
+          cuisine: data.cuisine, timeMins: data.timeMins, kcal: data.kcal,
+          viewedAt: new Date().toISOString(),
+        };
+        const filtered = existing.filter((r: any) => r.id !== data.id);
+        localStorage.setItem('recentlyViewed', JSON.stringify([entry, ...filtered].slice(0, 20)));
+      } catch {}
     } catch (error) {
       console.error('Error loading recipe:', error);
       alert('Recipe not found');
