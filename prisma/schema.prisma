@@ -18,6 +18,28 @@ model User {
   createdAt DateTime     @default(now())
   preferences Preference[]
   plans     Plan[]
+  savedRecipes        SavedRecipe[]
+  passwordResetTokens PasswordResetToken[]
+}
+
+model SavedRecipe {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  recipeId  String
+  createdAt DateTime @default(now())
+
+  @@unique([userId, recipeId])
+}
+
+model PasswordResetToken {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token     String   @unique
+  expiresAt DateTime
+  used      Boolean  @default(false)
+  createdAt DateTime @default(now())
 }
 
 model Preference {
@@ -45,6 +67,7 @@ model Preference {
   equipment           String?  // CSV
   region              String?  // e.g. KH, AU
   currency            String?  // e.g. KHR, AUD
+  showCalories        Boolean  @default(true)
   updatedAt           DateTime @updatedAt
 }
 
@@ -70,6 +93,7 @@ model Recipe {
   safetyMd        String?    // Markdown
   imageUrl        String?
   sourceUrl       String?
+  cookwareJson    String?    // JSON string of string[] e.g. ["Wok","Cutting board"]
   tags            String?    // CSV
   createdAt       DateTime   @default(now())
   planMeals       PlanMeal[]

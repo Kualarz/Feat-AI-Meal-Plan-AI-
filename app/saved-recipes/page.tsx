@@ -28,18 +28,11 @@ interface Recipe {
   tags: string | null;
 }
 
-interface SavedRecipeData {
-  id: string;
-  recipeId: string;
-  savedDate: string;
-  rating?: number;
-}
-
 export default function SavedRecipesPage() {
   const [savedRecipes, setSavedRecipes] = useState<Recipe[]>([]);
   const [filteredRecipes, setFilteredRecipes] = useState<Recipe[]>([]);
   const [loading, setLoading] = useState(true);
-  const [sortBy, setSortBy] = useState<'recent' | 'rating' | 'time' | 'price'>('recent');
+  const [sortBy, setSortBy] = useState<'recent' | 'time' | 'price'>('recent');
   const [filters, setFilters] = useState({
     q: '',
     cuisine: '',
@@ -49,55 +42,22 @@ export default function SavedRecipesPage() {
     vegan: false,
     halal: false,
   });
-  const [savedIds, setSavedIds] = useState<Set<string>>(new Set());
-  const [savedRecipeData, setSavedRecipeData] = useState<Map<string, SavedRecipeData>>(new Map());
 
-  // Load saved recipe IDs and metadata from localStorage
-  const loadSavedRecipes = () => {
-    try {
-      const saved = localStorage.getItem('savedRecipes');
-      if (saved) {
-        const parsedSaved: SavedRecipeData[] = JSON.parse(saved);
-        const idSet = new Set(parsedSaved.map((r) => r.recipeId));
-        setSavedIds(idSet);
-
-        // Create a map for quick lookup of saved recipe data
-        const dataMap = new Map(parsedSaved.map((r) => [r.recipeId, r]));
-        setSavedRecipeData(dataMap);
-
-        // Fetch recipe details
-        fetchSavedRecipeDetails(parsedSaved.map((r) => r.recipeId));
-      } else {
-        setLoading(false);
-      }
-    } catch (error) {
-      console.error('Error loading saved recipes:', error);
-      setLoading(false);
-    }
+  const getAuthHeader = () => {
+    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+    return token ? { Authorization: `Bearer ${token}` } : {};
   };
 
-  const fetchSavedRecipeDetails = async (recipeIds: string[]) => {
-    if (recipeIds.length === 0) {
-      setLoading(false);
-      return;
-    }
-
+  const fetchSavedRecipes = async () => {
+    setLoading(true);
     try {
-      // Fetch recipes one by one or batch if needed
-      const recipes: Recipe[] = [];
-      for (const id of recipeIds) {
-        try {
-          const response = await fetch(`/api/recipes/${id}`);
-          if (response.ok) {
-            const recipe = await response.json();
-            recipes.push(recipe);
-          }
-        } catch (err) {
-          console.error(`Error fetching recipe ${id}:`, err);
-        }
+      const response = await fetch('/api/saved-recipes', {
+        headers: { ...getAuthHeader() },
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setSavedRecipes(data);
       }
-
-      setSavedRecipes(recipes);
     } catch (error) {
       console.error('Error fetching saved recipes:', error);
     } finally {
@@ -106,7 +66,7 @@ export default function SavedRecipesPage() {
   };
 
   useEffect(() => {
-    loadSavedRecipes();
+    fetchSavedRecipes();
   }, []);
 
   useEffect(() => {
@@ -116,7 +76,6 @@ export default function SavedRecipesPage() {
   const applyFilters = () => {
     let filtered = [...savedRecipes];
 
-    // Text search
     if (filters.q) {
       filtered = filtered.filter(
         (r) =>
@@ -125,17 +84,14 @@ export default function SavedRecipesPage() {
       );
     }
 
-    // Cuisine filter
     if (filters.cuisine) {
       filtered = filtered.filter((r) => r.cuisine === filters.cuisine);
     }
 
-    // Difficulty filter
     if (filters.difficulty) {
       filtered = filtered.filter((r) => r.difficulty === filters.difficulty);
     }
 
-    // Diet filters
     if (filters.vegetarian) {
       filtered = filtered.filter(
         (r) => r.dietTags && r.dietTags.toLowerCase().includes('vegetarian')
@@ -150,24 +106,12 @@ export default function SavedRecipesPage() {
       filtered = filtered.filter((r) => r.dietTags && r.dietTags.toLowerCase().includes('halal'));
     }
 
-    // Apply sorting
-    if (sortBy === 'recent') {
-      filtered.sort((a, b) => {
-        const aDate = savedRecipeData.get(a.id)?.savedDate || '0';
-        const bDate = savedRecipeData.get(b.id)?.savedDate || '0';
-        return new Date(bDate).getTime() - new Date(aDate).getTime();
-      });
-    } else if (sortBy === 'rating') {
-      filtered.sort((a, b) => {
-        const aRating = savedRecipeData.get(a.id)?.rating || 0;
-        const bRating = savedRecipeData.get(b.id)?.rating || 0;
-        return bRating - aRating;
-      });
-    } else if (sortBy === 'time') {
+    if (sortBy === 'time') {
       filtered.sort((a, b) => (a.timeMins || 999) - (b.timeMins || 999));
     } else if (sortBy === 'price') {
       filtered.sort((a, b) => (a.estimatedPrice || 999) - (b.estimatedPrice || 999));
     }
+    // 'recent' order is preserved from API (ordered by createdAt desc)
 
     setFilteredRecipes(filtered);
   };
@@ -186,21 +130,19 @@ export default function SavedRecipesPage() {
     }));
   };
 
-  const handleRemoveSaved = (recipeId: string) => {
-    // Update state
+  const handleRemoveSaved = async (recipeId: string) => {
+    // Optimistic update
     setSavedRecipes((prev) => prev.filter((r) => r.id !== recipeId));
-    setSavedIds((prev) => {
-      const newSet = new Set(prev);
-      newSet.delete(recipeId);
-      return newSet;
-    });
 
-    // Update localStorage
-    const saved = localStorage.getItem('savedRecipes');
-    if (saved) {
-      const parsedSaved: SavedRecipeData[] = JSON.parse(saved);
-      const updated = parsedSaved.filter((r) => r.recipeId !== recipeId);
-      localStorage.setItem('savedRecipes', JSON.stringify(updated));
+    try {
+      await fetch(`/api/recipes/${recipeId}/save`, {
+        method: 'DELETE',
+        headers: { ...getAuthHeader() },
+      });
+    } catch (error) {
+      console.error('Error removing saved recipe:', error);
+      // Refetch to restore state on error
+      fetchSavedRecipes();
     }
   };
 
@@ -242,11 +184,10 @@ export default function SavedRecipesPage() {
                         </label>
                         <select
                           value={sortBy}
-                          onChange={(e) => setSortBy(e.target.value as any)}
+                          onChange={(e) => setSortBy(e.target.value as 'recent' | 'time' | 'price')}
                           className="w-full px-3 py-2 border border-border rounded-lg bg-muted text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
                         >
                           <option value="recent">Recently Saved</option>
-                          <option value="rating">Highest Rating</option>
                           <option value="time">Quickest First</option>
                           <option value="price">Cheapest First</option>
                         </select>
@@ -413,25 +354,6 @@ export default function SavedRecipesPage() {
                                 </p>
                               )}
 
-                              {/* Rating */}
-                              {savedRecipeData.get(recipe.id)?.rating && (
-                                <div className="mb-3">
-                                  <div className="flex items-center gap-1">
-                                    {[...Array(5)].map((_, i) => (
-                                      <span
-                                        key={i}
-                                        className={i < (savedRecipeData.get(recipe.id)?.rating || 0) ? '⭐' : '☆'}
-                                      >
-                                        {i < (savedRecipeData.get(recipe.id)?.rating || 0) ? '⭐' : '☆'}
-                                      </span>
-                                    ))}
-                                    <span className="text-xs text-muted-foreground ml-1">
-                                      ({savedRecipeData.get(recipe.id)?.rating}/5)
-                                    </span>
-                                  </div>
-                                </div>
-                              )}
-
                               <div className="flex flex-wrap gap-2 mb-3">
                                 {recipe.cuisine && (
                                   <span className="px-2 py-1 bg-primary/10 text-primary rounded-lg text-xs font-medium">
@@ -455,13 +377,6 @@ export default function SavedRecipesPage() {
                                   </div>
                                 )}
                               </div>
-
-                              {/* Saved Date */}
-                              {savedRecipeData.get(recipe.id)?.savedDate && (
-                                <p className="text-xs text-muted-foreground mb-3">
-                                  Saved {new Date(savedRecipeData.get(recipe.id)!.savedDate).toLocaleDateString()}
-                                </p>
-                              )}
 
                               {/* Actions */}
                               <div className="mt-auto flex gap-2">

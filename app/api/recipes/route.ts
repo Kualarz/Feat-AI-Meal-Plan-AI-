@@ -1033,9 +1033,40 @@ For Cornbread:
   },
 ];
 
+// Cookware data for each recipe
+const cookwareMap: Record<string, string[]> = {
+  'kh-1': ['Wok or large pan', 'Cutting board', 'Sharp knife', 'Spatula'],
+  'kh-2': ['Large pot', 'Mortar and pestle', 'Saucepan', 'Strainer', 'Serving bowls'],
+  'kh-3': ['Steamer', 'Mixing bowl', 'Whisk', 'Cutting board', 'Sharp knife'],
+  'th-1': ['Wok', 'Spatula', 'Large bowl', 'Colander'],
+  'th-2': ['Large deep pan', 'Cutting board', 'Sharp knife', 'Wooden spoon'],
+  'th-3': ['Large pot', 'Ladle', 'Sharp knife', 'Serving bowls'],
+  'vn-1': ['Large stockpot', 'Skimmer', 'Fine mesh strainer', 'Serving bowls', 'Sharp knife'],
+  'vn-2': ['Oven or toaster', 'Bread knife', 'Cutting board'],
+  'vn-3': ['Large shallow bowl', 'Damp towel', 'Saucepan'],
+  'au-1': ['Oven', 'Baking tray', 'Saucepan', 'Small pan', 'Zester'],
+  'au-2': ['Oven', 'Baking pan', 'Mixing bowls', 'Electric mixer', 'Wire rack', 'Double boiler'],
+  'au-3': ['Oven', 'Large mixing bowl', 'Electric mixer', 'Baking tray', 'Baking paper', 'Spatula'],
+  'us-1': ['Grill or skillet', 'Spatula', 'Cutting board', 'Knife'],
+  'us-2': ['Oven', 'Large pot', 'Saucepan', 'Whisk', 'Baking dish', 'Cheese grater'],
+  'us-3': ['Oven', 'Baking tray', 'Aluminum foil', 'Basting brush', 'Cast iron skillet', 'Mixing bowls'],
+  'extra-1': ['Mortar and pestle', 'Serving plate'],
+  'extra-2': ['Wok', 'Spatula', 'Large bowl'],
+  'extra-3': ['Large pot', 'Cutting board', 'Sharp knife', 'Wooden spoon'],
+  'extra-4': ['Oven', 'Baking tray', 'Saucepan', 'Mixing bowl'],
+  'extra-5': ['Grill or pan', 'Tongs', 'Small pan', 'Cutting board'],
+  'extra-6': ['Large pot', 'Ladle', 'Saucepan', 'Serving bowls'],
+};
+
+// Enrich recipes with cookware data
+const enrichedRecipes = sampleRecipes.map((recipe) => ({
+  ...recipe,
+  cookwareJson: JSON.stringify(cookwareMap[recipe.id] || []),
+}));
+
 export async function GET() {
   try {
-    return NextResponse.json(sampleRecipes);
+    return NextResponse.json(enrichedRecipes);
   } catch (error) {
     console.error('Error fetching recipes:', error);
     return NextResponse.json(

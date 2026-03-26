@@ -3,8 +3,12 @@ import { test, expect } from '@playwright/test';
 test.describe('Authentication Flow', () => {
   test('should navigate to signup page', async ({ page }) => {
     await page.goto('/');
-    await page.click('text=Sign Up');
+    // Homepage has "Sign In" button which links to /auth/signin
+    await page.click('text=Sign In');
+    await expect(page).toHaveURL('/auth/signin');
 
+    // From signin page, click "Sign Up" link to go to signup
+    await page.click('text=Sign Up');
     await expect(page).toHaveURL('/auth/signup');
     await expect(page.locator('text=Create Your Account')).toBeVisible();
   });
@@ -31,10 +35,17 @@ test.describe('Authentication Flow', () => {
     await page.fill('input[name="email"]', 'test@example.com');
     await page.fill('input[name="password"]', 'weak');
     await page.fill('input[name="confirmPassword"]', 'weak');
+    // Blur the last field to ensure React flushes all onChange state updates —
+    // Mobile Safari has a timing race where short fill() values don't commit before submit
+    await page.locator('input[name="confirmPassword"]').blur();
 
-    await page.click('button:has-text("Sign Up")');
+    // Use both submission methods to cover all browsers:
+    //   requestSubmit() works on webkit desktop (button click doesn't trigger onSubmit there)
+    //   button click works on Mobile Safari (requestSubmit() doesn't fire React handler there)
+    await page.locator('form').evaluate((f) => { try { (f as HTMLFormElement).requestSubmit(); } catch { /* noop */ } });
+    await page.locator('button[type="submit"]').click({ force: true });
 
-    // Should see error for weak password
+    // Should see error for weak password (client-side validation)
     await expect(
       page.locator('text=/Password must be at least/i')
     ).toBeVisible();
@@ -47,8 +58,10 @@ test.describe('Authentication Flow', () => {
     await page.fill('input[name="email"]', 'test@example.com');
     await page.fill('input[name="password"]', 'StrongPass123!');
     await page.fill('input[name="confirmPassword"]', 'DifferentPass123!');
+    await page.locator('input[name="confirmPassword"]').blur();
 
-    await page.click('button:has-text("Sign Up")');
+    await page.locator('form').evaluate((f) => { try { (f as HTMLFormElement).requestSubmit(); } catch { /* noop */ } });
+    await page.locator('button[type="submit"]').click({ force: true });
 
     // Should see error for password mismatch
     await expect(
@@ -81,11 +94,8 @@ test.describe('Authentication Flow', () => {
     // Try to submit without filling form
     await page.click('button:has-text("Sign In")');
 
-    // Should see validation error or form error
+    // HTML5 validation on required inputs — email field should be focused
     const emailInput = page.locator('input[name="email"]');
-    const passwordInput = page.locator('input[name="password"]');
-
-    // HTML5 validation on inputs
     await expect(emailInput).toBeFocused();
   });
 
@@ -120,7 +130,7 @@ test.describe('Guest Mode', () => {
     await page.goto('/auth/signup');
     await page.click('button:has-text("Continue as Guest")');
 
-    // Check for guest mode text in navbar
+    // Check for guest mode text or Sign In link in navbar
     await expect(
       page.locator('text=/Guest Mode|Sign In/i')
     ).toBeVisible();

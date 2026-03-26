@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { Button } from '@/components/Button';
 import { Input } from '@/components/Input';
 import { Card } from '@/components/Card';
+import { Navbar } from '@/components/Navbar';
 
 export default function SignUpPage() {
   const router = useRouter();
@@ -60,6 +61,28 @@ export default function SignUpPage() {
       return;
     }
 
+    // Client-side password strength validation (mirrors server-side validatePasswordStrength)
+    if (formData.password.length < 8) {
+      setError('Password must be at least 8 characters');
+      setLoading(false);
+      return;
+    }
+    if (!/[A-Z]/.test(formData.password)) {
+      setError('Password must contain at least one uppercase letter');
+      setLoading(false);
+      return;
+    }
+    if (!/[a-z]/.test(formData.password)) {
+      setError('Password must contain at least one lowercase letter');
+      setLoading(false);
+      return;
+    }
+    if (!/[0-9]/.test(formData.password)) {
+      setError('Password must contain at least one number');
+      setLoading(false);
+      return;
+    }
+
     if (formData.password !== formData.confirmPassword) {
       setError('Passwords do not match');
       setLoading(false);
@@ -102,7 +125,9 @@ export default function SignUpPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background py-12 flex items-center justify-center">
+    <div className="min-h-screen bg-background">
+      <Navbar />
+      <div className="py-12 flex items-center justify-center">
       <div className="max-w-md w-full px-4">
         <Card>
           <div className="text-center mb-8">
@@ -203,6 +228,7 @@ export default function SignUpPage() {
             </p>
           </div>
         </Card>
+      </div>
       </div>
     </div>
   );

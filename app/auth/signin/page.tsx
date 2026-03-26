@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { Button } from '@/components/Button';
 import { Input } from '@/components/Input';
 import { Card } from '@/components/Card';
+import { Navbar } from '@/components/Navbar';
 
 export default function SignInPage() {
   const router = useRouter();
@@ -68,7 +69,9 @@ export default function SignInPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background py-12 flex items-center justify-center">
+    <div className="min-h-screen bg-background">
+      <Navbar />
+      <div className="py-12 flex items-center justify-center">
       <div className="max-w-md w-full px-4">
         <Card>
           <div className="text-center mb-8">
@@ -117,15 +120,22 @@ export default function SignInPage() {
             </Button>
           </form>
 
-          <div className="mt-6 text-center">
+          <div className="mt-4 text-center">
+            <Link href="/auth/forgot-password" className="text-sm text-muted-foreground hover:text-primary hover:underline">
+              Forgot your password?
+            </Link>
+          </div>
+
+          <div className="mt-4 text-center">
             <p className="text-muted-foreground">
-              Don't have an account?{' '}
+              Don&apos;t have an account?{' '}
               <Link href="/auth/signup" className="text-primary hover:underline font-semibold">
                 Sign Up
               </Link>
             </p>
           </div>
         </Card>
+      </div>
       </div>
     </div>
   );

@@ -88,9 +88,9 @@ export function MainNavigation({ className = '' }: MainNavigationProps) {
           </p>
           <div className="space-y-1">
             <Link
-              href="/setup"
+              href="/settings"
               className={`block px-3 py-2 rounded-lg transition-colors ${
-                isActive('/setup')
+                isActive('/settings')
                   ? 'bg-primary text-primary-foreground'
                   : 'text-foreground hover:bg-muted'
               }`}

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { normalizeRecipeFromUrl } from '@/lib/ai';
+import { extractRecipeFromHtml } from '@/lib/gemini';
 import { db } from '@/lib/db';
 
 export async function POST(request: NextRequest) {
@@ -57,10 +57,10 @@ export async function POST(request: NextRequest) {
     // If no schema.org found, use AI to normalize
     if (!recipeData) {
       console.log('No schema.org found, using AI to normalize...');
-      recipeData = await normalizeRecipeFromUrl(
+      recipeData = await extractRecipeFromHtml(
         html,
         url,
-        diet || { vegetarian: false, vegan: false, halal: false },
+        body.diet || { vegetarian: false, vegan: false, halal: false },
         currency || 'KHR'
       );
     }

@@ -7,6 +7,7 @@ import { Input } from '@/components/Input';
 import { Select } from '@/components/Select';
 import { Card } from '@/components/Card';
 import { getNutritionSummary } from '@/lib/nutrition';
+import { Navbar } from '@/components/Navbar';
 
 export default function SetupPage() {
   const router = useRouter();
@@ -14,6 +15,11 @@ export default function SetupPage() {
   const [calculating, setCalculating] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [nutritionSummary, setNutritionSummary] = useState<any>(null);
+  const [unitSystem, setUnitSystem] = useState<'metric' | 'imperial'>('metric');
+  // Imperial display values (used only for UI, always converted to metric for storage)
+  const [imperialWeight, setImperialWeight] = useState({ lbs: 154 });
+  const [imperialTargetWeight, setImperialTargetWeight] = useState({ lbs: 154 });
+  const [imperialHeight, setImperialHeight] = useState({ ft: 5, inches: 7 });
   const [formData, setFormData] = useState({
     caloriesTarget: 2000,
     proteinTarget: 120,
@@ -44,7 +50,37 @@ export default function SetupPage() {
     height: 170,
     age: 30,
     activityLevel: 'moderate',
+    showCalories: true,
   });
+
+  // ─── Unit conversion helpers ───────────────────────────────────────────────
+  const kgToLbs = (kg: number) => Math.round(kg * 2.20462 * 10) / 10;
+  const lbsToKg = (lbs: number) => Math.round(lbs / 2.20462 * 10) / 10;
+  const cmToFtIn = (cm: number) => {
+    const totalInches = cm / 2.54;
+    return { ft: Math.floor(totalInches / 12), inches: Math.round(totalInches % 12) };
+  };
+  const ftInToCm = (ft: number, inches: number) => Math.round((ft * 12 + inches) * 2.54);
+
+  const toggleUnitSystem = () => {
+    if (unitSystem === 'metric') {
+      // Convert metric → imperial for display state
+      setImperialWeight({ lbs: kgToLbs(Number(formData.currentWeight)) });
+      setImperialTargetWeight({ lbs: kgToLbs(Number(formData.targetWeight)) });
+      setImperialHeight(cmToFtIn(Number(formData.height)));
+      setUnitSystem('imperial');
+    } else {
+      // Convert imperial → metric and store back in formData
+      setFormData(prev => ({
+        ...prev,
+        currentWeight: lbsToKg(imperialWeight.lbs),
+        targetWeight: lbsToKg(imperialTargetWeight.lbs),
+        height: ftInToCm(imperialHeight.ft, imperialHeight.inches),
+      }));
+      setUnitSystem('metric');
+    }
+  };
+  // ──────────────────────────────────────────────────────────────────────────
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
@@ -57,6 +93,7 @@ export default function SetupPage() {
       [name]: type === 'checkbox' ? checked : value,
     }));
   };
+
 
   const handleDietToggle = (dietValue: string) => {
     setFormData((prev) => {
@@ -196,19 +233,34 @@ export default function SetupPage() {
     setCalculating(true);
 
     try {
-      if (!formData.currentWeight || !formData.height || !formData.age || !formData.weightGoal || !formData.activityLevel) {
+      // Resolve metric values regardless of current unit system
+      const weightKg = unitSystem === 'imperial' ? lbsToKg(imperialWeight.lbs) : Number(formData.currentWeight);
+      const heightCm = unitSystem === 'imperial' ? ftInToCm(imperialHeight.ft, imperialHeight.inches) : Number(formData.height);
+      const targetWeightKg = unitSystem === 'imperial' ? lbsToKg(imperialTargetWeight.lbs) : Number(formData.targetWeight);
+
+      if (!weightKg || !heightCm || !formData.age || !formData.weightGoal || !formData.activityLevel) {
         alert('Please fill in all body metrics and weight goal fields');
         setCalculating(false);
         return;
       }
 
+      // Also sync imperial values back into formData so API submission has latest values
+      if (unitSystem === 'imperial') {
+        setFormData(prev => ({
+          ...prev,
+          currentWeight: weightKg,
+          height: heightCm,
+          targetWeight: targetWeightKg,
+        }));
+      }
+
       const summary = getNutritionSummary({
-        currentWeight: Number(formData.currentWeight),
-        height: Number(formData.height),
+        currentWeight: weightKg,
+        height: heightCm,
         age: Number(formData.age),
         weightGoal: formData.weightGoal as 'maintain' | 'lose' | 'gain' | 'bulk',
         activityLevel: formData.activityLevel as 'sedentary' | 'light' | 'moderate' | 'active' | 'veryActive',
-        targetWeight: formData.targetWeight ? Number(formData.targetWeight) : undefined,
+        targetWeight: targetWeightKg || undefined,
       });
 
       setFormData((prev) => ({
@@ -244,8 +296,16 @@ export default function SetupPage() {
       const allCuisines = formData.cuisinesList.join(',');
       const allEquipment = formData.equipmentList.join(',');
 
+      // Always submit in metric — convert if user was in imperial mode
+      const metricWeight = unitSystem === 'imperial' ? lbsToKg(imperialWeight.lbs) : Number(formData.currentWeight);
+      const metricHeight = unitSystem === 'imperial' ? ftInToCm(imperialHeight.ft, imperialHeight.inches) : Number(formData.height);
+      const metricTargetWeight = unitSystem === 'imperial' ? lbsToKg(imperialTargetWeight.lbs) : Number(formData.targetWeight);
+
       const submitData = {
         ...formData,
+        currentWeight: metricWeight,
+        height: metricHeight,
+        targetWeight: metricTargetWeight,
         allergens: allAllergens,
         dislikes: allDislikes,
         cuisines: allCuisines,
@@ -271,7 +331,7 @@ export default function SetupPage() {
       }
 
       // After preferences are saved, take the user to the Meal Planner
-      router.push('/planner');
+      router.push('/recipes');
     } catch (error) {
       console.error('Error saving preferences:', error);
       alert('Failed to save preferences. Please try again.');
@@ -307,7 +367,9 @@ export default function SetupPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background py-12">
+    <div className="min-h-screen bg-background">
+      <Navbar />
+      <div className="py-12">
       <div className="max-w-3xl mx-auto px-4">
         <div className="text-center mb-8">
           <h1 className="text-4xl font-bold text-foreground mb-2">
@@ -334,43 +396,111 @@ export default function SetupPage() {
             {currentPage === 1 && (
               <>
                 <div>
-                  <h2 className="text-xl font-semibold text-foreground mb-4">
-                    Weight Goals & Nutrition Optimization
-                  </h2>
+                  <div className="flex items-center justify-between mb-4">
+                    <h2 className="text-xl font-semibold text-foreground">
+                      Weight Goals & Nutrition Optimization
+                    </h2>
+                    {/* ── Metric / Imperial Toggle ── */}
+                    <div className="flex items-center gap-1 bg-muted rounded-full p-1">
+                      <button
+                        type="button"
+                        onClick={() => unitSystem !== 'metric' && toggleUnitSystem()}
+                        className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all ${
+                          unitSystem === 'metric'
+                            ? 'bg-primary text-primary-foreground shadow'
+                            : 'text-muted-foreground hover:text-foreground'
+                        }`}
+                      >
+                        Metric
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => unitSystem !== 'imperial' && toggleUnitSystem()}
+                        className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all ${
+                          unitSystem === 'imperial'
+                            ? 'bg-primary text-primary-foreground shadow'
+                            : 'text-muted-foreground hover:text-foreground'
+                        }`}
+                      >
+                        Imperial
+                      </button>
+                    </div>
+                  </div>
                   <p className="text-muted-foreground text-sm mb-4">
                     Help us calculate your optimal nutrition targets based on your body metrics and goals
                   </p>
-                  <div className="grid md:grid-cols-3 gap-4 mb-4">
-                    <Input
-                      label="Current Weight (kg)"
-                      type="number"
-                      name="currentWeight"
-                      value={formData.currentWeight}
-                      onChange={handleChange}
-                      min="30"
-                      max="300"
-                      step="0.1"
-                    />
-                    <Input
-                      label="Height (cm)"
-                      type="number"
-                      name="height"
-                      value={formData.height}
-                      onChange={handleChange}
-                      min="100"
-                      max="250"
-                      step="0.1"
-                    />
-                    <Input
-                      label="Age (years)"
-                      type="number"
-                      name="age"
-                      value={formData.age}
-                      onChange={handleChange}
-                      min="13"
-                      max="120"
-                    />
-                  </div>
+
+                  {/* ── Body Metrics ── */}
+                  {unitSystem === 'metric' ? (
+                    <div className="grid md:grid-cols-3 gap-4 mb-4">
+                      <Input
+                        label="Current Weight (kg)"
+                        type="number"
+                        name="currentWeight"
+                        value={formData.currentWeight}
+                        onChange={handleChange}
+                        min="30"
+                        max="300"
+                        step="0.1"
+                      />
+                      <Input
+                        label="Height (cm)"
+                        type="number"
+                        name="height"
+                        value={formData.height}
+                        onChange={handleChange}
+                        min="100"
+                        max="250"
+                        step="0.1"
+                      />
+                      <Input
+                        label="Age (years)"
+                        type="number"
+                        name="age"
+                        value={formData.age}
+                        onChange={handleChange}
+                        min="13"
+                        max="120"
+                      />
+                    </div>
+                  ) : (
+                    <div className="grid md:grid-cols-4 gap-4 mb-4">
+                      <Input
+                        label="Current Weight (lbs)"
+                        type="number"
+                        value={imperialWeight.lbs}
+                        onChange={(e) => setImperialWeight({ lbs: Number(e.target.value) })}
+                        min="66"
+                        max="660"
+                        step="0.1"
+                      />
+                      <Input
+                        label="Height (ft)"
+                        type="number"
+                        value={imperialHeight.ft}
+                        onChange={(e) => setImperialHeight(prev => ({ ...prev, ft: Number(e.target.value) }))}
+                        min="3"
+                        max="8"
+                      />
+                      <Input
+                        label="Height (in)"
+                        type="number"
+                        value={imperialHeight.inches}
+                        onChange={(e) => setImperialHeight(prev => ({ ...prev, inches: Number(e.target.value) }))}
+                        min="0"
+                        max="11"
+                      />
+                      <Input
+                        label="Age (years)"
+                        type="number"
+                        name="age"
+                        value={formData.age}
+                        onChange={handleChange}
+                        min="13"
+                        max="120"
+                      />
+                    </div>
+                  )}
 
                   <div className="grid md:grid-cols-2 gap-4 mb-4">
                     <Select
@@ -400,16 +530,28 @@ export default function SetupPage() {
                     />
                   </div>
 
-                  <Input
-                    label="Target Weight (kg)"
-                    type="number"
-                    name="targetWeight"
-                    value={formData.targetWeight}
-                    onChange={handleChange}
-                    min="30"
-                    max="300"
-                    step="0.1"
-                  />
+                  {unitSystem === 'metric' ? (
+                    <Input
+                      label="Target Weight (kg)"
+                      type="number"
+                      name="targetWeight"
+                      value={formData.targetWeight}
+                      onChange={handleChange}
+                      min="30"
+                      max="300"
+                      step="0.1"
+                    />
+                  ) : (
+                    <Input
+                      label="Target Weight (lbs)"
+                      type="number"
+                      value={imperialTargetWeight.lbs}
+                      onChange={(e) => setImperialTargetWeight({ lbs: Number(e.target.value) })}
+                      min="66"
+                      max="660"
+                      step="0.1"
+                    />
+                  )}
 
                   <div className="mt-6">
                     <Button
@@ -897,6 +1039,47 @@ export default function SetupPage() {
                     />
                   </div>
                 </div>
+
+                {/* ── Display Preferences ── */}
+                <div>
+                  <h2 className="text-xl font-semibold text-foreground mb-4">
+                    Display Preferences
+                  </h2>
+                  <div className="p-4 bg-card border border-border rounded-xl">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="font-medium text-foreground">&#x1F525; Show Calorie Information</p>
+                        <p className="text-sm text-muted-foreground mt-0.5">
+                          Display calorie counts on recipe cards and meal planner
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-1 bg-muted rounded-full p-1 ml-4 shrink-0">
+                        <button
+                          type="button"
+                          onClick={() => setFormData(prev => ({ ...prev, showCalories: true }))}
+                          className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all ${
+                            formData.showCalories
+                              ? 'bg-primary text-primary-foreground shadow'
+                              : 'text-muted-foreground hover:text-foreground'
+                          }`}
+                        >
+                          Show
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setFormData(prev => ({ ...prev, showCalories: false }))}
+                          className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all ${
+                            !formData.showCalories
+                              ? 'bg-primary text-primary-foreground shadow'
+                              : 'text-muted-foreground hover:text-foreground'
+                          }`}
+                        >
+                          Hide
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </>
             )}
 
@@ -946,6 +1129,7 @@ export default function SetupPage() {
             </div>
           </form>
         </Card>
+      </div>
       </div>
     </div>
   );
