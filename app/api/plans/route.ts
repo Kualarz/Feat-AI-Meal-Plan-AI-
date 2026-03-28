@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
+
+export const dynamic = 'force-dynamic';
 import { PrismaClient } from '@prisma/client';
 import { requireAuth, createUnauthorizedResponse } from '@/lib/auth-middleware';
 import { handleAPIError } from '@/lib/api-errors';

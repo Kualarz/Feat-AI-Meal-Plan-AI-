@@ -8,7 +8,7 @@ const requiredEnvVars = [
   'NEXT_PUBLIC_SUPABASE_URL',
   'NEXT_PUBLIC_SUPABASE_ANON_KEY',
   'JWT_SECRET',
-  'ANTHROPIC_API_KEY',
+  'GEMINI_API_KEY',
 ] as const;
 
 const optionalEnvVars = [
@@ -25,7 +25,7 @@ export interface EnvConfig {
   SUPABASE_URL: string;
   SUPABASE_KEY: string;
   JWT_SECRET: string;
-  ANTHROPIC_API_KEY: string;
+  GEMINI_API_KEY: string;
 
   // Optional with defaults
   NODE_ENV: 'development' | 'production' | 'test';
@@ -72,7 +72,7 @@ export function validateEnv(): EnvConfig {
     SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL!,
     SUPABASE_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     JWT_SECRET: process.env.JWT_SECRET!,
-    ANTHROPIC_API_KEY: process.env.ANTHROPIC_API_KEY!,
+    GEMINI_API_KEY: process.env.GEMINI_API_KEY!,
 
     // Optional with defaults
     NODE_ENV: (process.env.NODE_ENV as any) || 'development',

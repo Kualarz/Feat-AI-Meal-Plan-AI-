@@ -33,7 +33,7 @@ export default function SetupPreferencesPage() {
   const [cuisinesList, setCuisinesList] = useState<string[]>(['Cambodian', 'Thai', 'Vietnamese']);
   const [cuisineInput, setCuisineInput] = useState('');
   const [region, setRegion] = useState('KH');
-  const [currency, setCurrency] = useState('KHR');
+  const [currency, setCurrency] = useState('USD');
 
   useEffect(() => {
     const saved = localStorage.getItem(STORAGE_KEY);
@@ -119,7 +119,7 @@ export default function SetupPreferencesPage() {
                 value={cuisineInput}
                 onChange={e => setCuisineInput(e.target.value)}
                 onKeyDown={e => e.key === 'Enter' && addCustomCuisine()}
-                placeholder="Add other cuisine…"
+                placeholder="Add other cuisine..."
                 className="flex-1 px-3 py-2 border border-border bg-background text-foreground rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary"
               />
               <button type="button" onClick={addCustomCuisine} className="px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm hover:bg-primary/90 transition">Add</button>

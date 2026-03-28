@@ -3,8 +3,6 @@
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Navbar } from '@/components/Navbar';
-import { MainNavigation } from '@/components/MainNavigation';
 import { Button } from '@/components/Button';
 
 // ── Types ──────────────────────────────────────────────────────────────────────
@@ -62,7 +60,7 @@ function folderColors(index: number) {
 
 function RecentCard({ recipe }: { recipe: RecentlyViewed }) {
   return (
-    <Link href={`/recipes/${recipe.id}`} className="flex-shrink-0 w-44 group">
+    <Link href={`/recipes/${recipe.id}`} aria-label={`View ${recipe.title}`} className="flex-shrink-0 w-44 group">
       <div className="relative w-44 h-28 rounded-xl overflow-hidden bg-muted mb-2">
         {recipe.imageUrl ? (
           <img src={recipe.imageUrl} alt={recipe.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
@@ -104,7 +102,7 @@ function RecipeCard({
   }, []);
 
   return (
-    <div className="bg-card border border-border rounded-xl overflow-hidden hover:shadow-md transition-shadow group">
+    <div className="bg-card border border-border rounded-large-card overflow-hidden hover:shadow-md transition-shadow group">
       <Link href={`/recipes/${recipe.id}`}>
         <div className="relative h-40 bg-muted overflow-hidden">
           {recipe.imageUrl ? (
@@ -122,7 +120,7 @@ function RecipeCard({
 
       <div className="p-3">
         <Link href={`/recipes/${recipe.id}`}>
-          <h3 className="text-sm font-semibold text-foreground line-clamp-2 hover:text-primary transition-colors mb-1">{recipe.title}</h3>
+          <h3 className="text-sm font-display text-foreground line-clamp-2 hover:text-primary transition-colors mb-1">{recipe.title}</h3>
         </Link>
         <div className="flex items-center gap-2 text-xs text-muted-foreground mb-3">
           {recipe.timeMins && <span>⏱ {recipe.timeMins}m</span>}
@@ -134,7 +132,8 @@ function RecipeCard({
           <div className="relative" ref={menuRef}>
             <button
               onClick={() => setMenuOpen(v => !v)}
-              className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground px-2 py-1 rounded-lg border border-border hover:bg-muted transition-colors"
+              aria-label="Change folder"
+              className="flex items-center gap-1 text-[10px] font-display uppercase tracking-widest text-muted-foreground hover:text-foreground px-2 py-1 rounded-pill border border-border hover:bg-muted transition-colors"
             >
               📁 {collections.find(c => c.id === recipe.collectionId)?.name || 'Move to folder'}
               <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
@@ -164,7 +163,7 @@ function RecipeCard({
             className="p-1.5 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
             title="Remove from library"
           >
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
           </button>
         </div>
       </div>
@@ -313,17 +312,15 @@ export default function LibraryPage() {
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      <Navbar />
       <div className="flex flex-1 overflow-hidden">
-        <MainNavigation className="hidden md:block w-64 overflow-y-auto" />
         <div className="flex-1 overflow-y-auto">
 
           {/* Page header */}
           <div className="bg-card border-b border-border">
             <div className="max-w-5xl mx-auto px-4 py-5 flex items-center justify-between gap-4">
               <div>
-                <h1 className="text-2xl font-bold text-foreground">🏠 Home</h1>
-                <p className="text-sm text-muted-foreground">{recipes.length} saved recipe{recipes.length !== 1 ? 's' : ''}</p>
+                <h1 className="text-3xl font-display text-brand-green leading-none">📖 My Library</h1>
+                <p className="text-xs text-muted-foreground font-body font-bold uppercase tracking-widest mt-1">{recipes.length} saved recipe{recipes.length !== 1 ? 's' : ''}</p>
               </div>
               <div className="flex items-center gap-2">
                 <div className="relative">
@@ -335,7 +332,7 @@ export default function LibraryPage() {
                     value={search}
                     onChange={e => setSearch(e.target.value)}
                     placeholder="Search library…"
-                    className="pl-9 pr-4 py-2 border border-border rounded-lg bg-background text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary w-52"
+                    className="pl-9 pr-4 py-2 border border-border rounded-pill bg-background text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary w-52"
                   />
                 </div>
                 <Link href="/recipes">
@@ -350,7 +347,7 @@ export default function LibraryPage() {
             {/* ── Recently Viewed ──────────────────────────────── */}
             {recentlyViewed.length > 0 && (
               <section>
-                <h2 className="text-lg font-semibold text-foreground mb-4">Recently Viewed</h2>
+                <h2 className="text-xl font-display text-foreground mb-4 uppercase tracking-widest">Recently Viewed</h2>
                 <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-hide">
                   {recentlyViewed.map(r => (
                     <RecentCard key={r.id} recipe={r} />
@@ -362,12 +359,13 @@ export default function LibraryPage() {
             {/* ── Collections / Folders ────────────────────────── */}
             <section>
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-semibold text-foreground">Folders</h2>
+                <h2 className="text-xl font-display text-foreground uppercase tracking-widest">Folders</h2>
                 <button
                   onClick={() => setCreatingFolder(true)}
-                  className="flex items-center gap-1.5 text-sm text-primary hover:underline"
+                  aria-label="Create new folder"
+                  className="flex items-center gap-1.5 text-xs font-display uppercase tracking-widest text-primary hover:underline"
                 >
-                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
                   New Folder
                 </button>
               </div>
@@ -376,7 +374,7 @@ export default function LibraryPage() {
                 {/* All Recipes */}
                 <button
                   onClick={() => setSelectedCollection(null)}
-                  className={`flex items-center gap-3 p-4 rounded-xl border text-left transition-all ${
+                  className={`flex items-center gap-3 p-4 rounded-large-card border text-left transition-all ${
                     selectedCollection === null
                       ? 'border-primary bg-primary/5 shadow-sm'
                       : 'border-border bg-card hover:bg-muted/50'
@@ -384,8 +382,8 @@ export default function LibraryPage() {
                 >
                   <span className="text-2xl">📚</span>
                   <div className="min-w-0">
-                    <p className="text-sm font-semibold text-foreground truncate">All Saved</p>
-                    <p className="text-xs text-muted-foreground">{recipes.length} recipes</p>
+                    <p className="text-sm font-display text-foreground truncate uppercase tracking-wider">All Saved</p>
+                    <p className="text-[10px] font-body font-bold text-muted-foreground uppercase tracking-widest">{recipes.length} recipes</p>
                   </div>
                 </button>
 
@@ -401,8 +399,8 @@ export default function LibraryPage() {
                   >
                     <span className="text-2xl">📂</span>
                     <div className="min-w-0">
-                      <p className="text-sm font-semibold text-foreground truncate">Uncollected</p>
-                      <p className="text-xs text-muted-foreground">{uncollectedCount} recipes</p>
+                      <p className="text-sm font-display text-foreground truncate uppercase tracking-wider">Uncollected</p>
+                      <p className="text-[10px] font-body font-bold text-muted-foreground uppercase tracking-widest">{uncollectedCount} recipes</p>
                     </div>
                   </button>
                 )}
@@ -436,9 +434,9 @@ export default function LibraryPage() {
                           className="w-full text-sm font-semibold bg-transparent border-b border-primary outline-none text-foreground"
                         />
                       ) : (
-                        <p className="text-sm font-semibold text-foreground truncate">{col.name}</p>
+                        <p className="text-sm font-display text-foreground truncate uppercase tracking-wider">{col.name}</p>
                       )}
-                      <p className="text-xs text-muted-foreground">{col._count.savedRecipes} recipes</p>
+                      <p className="text-[10px] font-body font-bold text-muted-foreground uppercase tracking-widest">{col._count.savedRecipes} recipes</p>
                     </div>
                     {/* Hover actions */}
                     <div className="absolute top-2 right-2 hidden group-hover:flex gap-1" onClick={e => e.stopPropagation()}>
@@ -474,7 +472,7 @@ export default function LibraryPage() {
                       }}
                       onBlur={() => { if (newFolderName.trim()) createFolder(); else { setCreatingFolder(false); setNewFolderName(''); } }}
                       placeholder="Folder name…"
-                      className="flex-1 text-sm font-semibold bg-transparent border-b border-primary outline-none text-foreground placeholder:text-muted-foreground"
+                      className="flex-1 text-sm font-display bg-transparent border-b border-primary outline-none text-foreground placeholder:text-muted-foreground"
                     />
                   </div>
                 )}
@@ -484,20 +482,20 @@ export default function LibraryPage() {
             {/* ── Recipe Grid ──────────────────────────────────── */}
             <section>
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-semibold text-foreground">
+                <h2 className="text-xl font-display text-foreground uppercase tracking-widest">
                   {selectedCollection === null
                     ? 'All Saved Recipes'
                     : selectedCollection === '__none__'
                     ? 'Uncollected Recipes'
                     : collections.find(c => c.id === selectedCollection)?.name || 'Recipes'}
-                  <span className="ml-2 text-sm font-normal text-muted-foreground">({displayedRecipes.length})</span>
+                  <span className="ml-2 text-xs font-body font-bold text-muted-foreground uppercase tracking-widest">({displayedRecipes.length})</span>
                 </h2>
               </div>
 
               {loading ? (
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
                   {[...Array(8)].map((_, i) => (
-                    <div key={i} className="bg-card border border-border rounded-xl overflow-hidden animate-pulse">
+                    <div key={i} className="bg-card border border-border rounded-large-card overflow-hidden motion-safe:animate-pulse">
                       <div className="h-40 bg-muted" />
                       <div className="p-3 space-y-2">
                         <div className="h-4 bg-muted rounded w-3/4" />

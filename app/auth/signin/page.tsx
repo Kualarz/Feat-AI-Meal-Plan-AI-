@@ -60,7 +60,7 @@ export default function SignInPage() {
       localStorage.setItem('token', data.token);
       localStorage.setItem('isGuest', 'false');
 
-      router.push('/recipes');
+      router.push('/dashboard');
     } catch (error) {
       console.error('Error signing in:', error);
       setError('An error occurred during sign in. Please try again.');

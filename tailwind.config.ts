@@ -11,33 +11,51 @@ const config: Config = {
   ],
   theme: {
     extend: {
+      fontFamily: {
+        display: ["Righteous", "cursive"],
+        body: ["Inter", "Carlito", "sans-serif"],
+      },
       colors: {
-        // Background colors
+        // Brand Identity System
+        brand: {
+          green: "#22C55E",    // Fresh Green (Navigation & Headers)
+          orange: "#FF6B00",   // Feast Orange (Primary Action)
+          eggshell: "#FDFCF8", // Surface Background
+          black: "#1A1A1A",    // Near Black (Text & Dark Surfaces)
+          "green-tint": "#DCFCE7", // Success/Savings Feedback
+          "orange-tint": "#FFF1E6", // Selection/Hover Layer
+        },
+        
+        // Semantic mapping to CSS variables
         background: "hsl(var(--background))",
         foreground: "hsl(var(--foreground))",
-
-        // Card colors
         card: "hsl(var(--card))",
         "card-foreground": "hsl(var(--card-foreground))",
-
-        // Border color
         border: "hsl(var(--border))",
-
-        // Primary colors (buttons, links, accents)
         primary: "hsl(var(--primary))",
         "primary-foreground": "hsl(var(--primary-foreground))",
-
-        // Muted/secondary colors
+        accent: "hsl(var(--accent))",
+        "accent-foreground": "hsl(var(--accent-foreground))",
         muted: "hsl(var(--muted))",
         "muted-foreground": "hsl(var(--muted-foreground))",
-
-        // Success, warning, error colors
         success: "hsl(var(--success))",
-        "success-foreground": "hsl(var(--success-foreground))",
         warning: "hsl(var(--warning))",
-        "warning-foreground": "hsl(var(--warning-foreground))",
         destructive: "hsl(var(--destructive))",
-        "destructive-foreground": "hsl(var(--destructive-foreground))",
+      },
+      borderRadius: {
+        "large-card": "24px",
+        pill: "999px",
+        input: "16px",
+        small: "8px",
+      },
+      spacing: {
+        '8pt-1': '4px',
+        '8pt-2': '8px',
+        '8pt-3': '12px',
+        '8pt-4': '16px',
+        '8pt-5': '24px',
+        '8pt-6': '32px',
+        '8pt-7': '48px',
       },
     },
   },

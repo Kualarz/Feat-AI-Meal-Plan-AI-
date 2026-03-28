@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
+
+export const dynamic = 'force-dynamic';
 import { db } from '@/lib/db';
 import { requireAuth } from '@/lib/auth-middleware';
 
@@ -1068,9 +1070,17 @@ const enrichedRecipes = sampleRecipes.map((recipe) => ({
 
 export async function GET(request: NextRequest) {
   try {
-    let recipes = [...enrichedRecipes];
+    console.log('[API] GET /api/recipes hit');
+    // 1. Fetch ALL recipes from the database
+    let recipes = await db.recipe.findMany({
+      include: {
+        _count: {
+          select: { likes: true, savedBy: true }
+        }
+      }
+    });
 
-    // Optionally filter by user preferences if signed in
+    // 2. Optionally filter by user preferences if signed in
     const user = requireAuth(request);
     if (user) {
       const prefs = await db.preference.findFirst({
@@ -1093,7 +1103,7 @@ export async function GET(request: NextRequest) {
           recipes = recipes.filter(r => r.dietTags?.toLowerCase().includes('vegetarian'));
         }
 
-        // Hard filters: allergens and dislikes — exclude recipes containing them in ingredients
+        // Hard filters: allergens and dislikes
         if (allergenList.length > 0 || dislikeList.length > 0) {
           const excludeTerms = [...allergenList, ...dislikeList];
           recipes = recipes.filter(r => {

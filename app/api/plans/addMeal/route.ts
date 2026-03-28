@@ -1,10 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
+import { requireAuth, createUnauthorizedResponse } from '@/lib/auth-middleware';
 
 const prisma = new PrismaClient();
 
 export async function POST(request: NextRequest) {
   try {
+    const user = requireAuth(request);
+    if (!user) return createUnauthorizedResponse();
+
     const body = await request.json();
     const { recipeId, dayISO, slot } = body;
 
@@ -47,10 +51,9 @@ export async function POST(request: NextRequest) {
     }
 
     // Get or create a plan for the user
-    // For now, we'll use a default plan (you can add user auth later)
     let plan = await prisma.plan.findFirst({
       where: {
-        // If you have user auth, add: userId: currentUserId
+        userId: user.userId,
         weekStart: {
           lte: new Date(dayISO),
         },
@@ -70,7 +73,7 @@ export async function POST(request: NextRequest) {
         data: {
           weekStart,
           weekEnd,
-          userId: 'default-user',
+          userId: user.userId,
         },
       });
     }

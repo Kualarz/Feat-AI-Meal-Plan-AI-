@@ -1,5 +1,7 @@
-import Anthropic from '@anthropic-ai/sdk';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 import { extractRecipeFromHtml, extractRecipeFromYouTube as geminiExtractFromYouTube } from '@/lib/gemini';
+
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
 
 export interface ProfileInput {
   name: string;
@@ -84,71 +86,12 @@ export interface MealPlanJson {
   rationale: string;
 }
 
-const client = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY || '',
-});
-
 const SYSTEM_PROMPT = `You are a certified nutrition coach and SEA home-cooking expert specializing in Southeast Asian cuisine (Cambodian, Thai, Vietnamese, Malaysian, Indonesian).
 
-STRICT RULES:
-1. You MUST respect halal, vegan, and vegetarian flags strictly - no exceptions
-2. You MUST output VALID JSON ONLY - no markdown, no explanation, no text before or after
-3. You MUST use locally-available SEA ingredients and realistic prices
-4. You MUST avoid all allergens specified by the user
-5. You MUST respect the user's dislikes completely
-6. You MUST stay within the time budget specified
-7. You MUST provide authentic SEA recipes with proper techniques
+RULES: Respect halal/vegan/vegetarian strictly. Use SEA ingredients and realistic prices. Avoid allergens and dislikes. Stay within time budget.
 
-OUTPUT FORMAT (JSON ONLY):
-{
-  "days": [
-    {
-      "date": "2025-11-03",
-      "breakfast": {
-        "title": "Khmer-style Banana Pancakes",
-        "ingredients": [{"name": "rice flour", "qty": "100", "unit": "g", "notes": ""}],
-        "steps": "1. Mix rice flour with water and banana\\n2. Pan-fry until golden",
-        "macros": {"kcal": 350, "protein": 8, "carbs": 65, "fat": 5},
-        "time_mins": 15,
-        "estimated_price": 5000,
-        "currency": "KHR",
-        "image_url": "https://images.unsplash.com/photo-banana-pancakes",
-        "why": "Quick breakfast using local ingredients, meets calorie target"
-      },
-      "lunch": {...},
-      "dinner": {...},
-      "dessert": {...},
-      "daily_total": {"kcal": 2000, "protein": 120, "carbs": 250, "fat": 67}
-    }
-  ],
-  "shopping_list": [
-    {
-      "section": "Produce",
-      "items": [{"name": "banana", "qty": "5", "unit": "pieces"}]
-    },
-    {
-      "section": "Meat/Seafood",
-      "items": [{"name": "chicken thigh", "qty": "500", "unit": "g"}]
-    },
-    {
-      "section": "Dry Pantry",
-      "items": [{"name": "jasmine rice", "qty": "2", "unit": "kg"}]
-    },
-    {
-      "section": "Sauces/Pastes",
-      "items": [{"name": "fish sauce", "qty": "1", "unit": "bottle"}]
-    },
-    {
-      "section": "Dairy/Alt",
-      "items": [{"name": "coconut milk", "qty": "400", "unit": "ml"}]
-    },
-    {
-      "section": "Frozen",
-      "items": []
-    }
-  ],
-  "rationale": "This 7-day meal plan focuses on authentic Cambodian cuisine with Thai and Vietnamese influences. All meals respect halal requirements and avoid shellfish allergens. The plan stays within 40-minute cooking times and uses medium-budget ingredients available in Phnom Penh markets."
-}`;
+JSON SCHEMA:
+{"days":[{"date":"YYYY-MM-DD","breakfast":{"title":"","ingredients":[{"name":"","qty":"","unit":"","notes":""}],"steps":"","macros":{"kcal":0,"protein":0,"carbs":0,"fat":0},"time_mins":0,"estimated_price":0,"currency":"","image_url":null,"why":""},"lunch":{...},"dinner":{...},"dessert":{...},"daily_total":{"kcal":0,"protein":0,"carbs":0,"fat":0}}],"shopping_list":[{"section":"Produce|Meat/Seafood|Dry Pantry|Sauces/Pastes|Dairy/Alt|Frozen","items":[{"name":"","qty":"","unit":""}]}],"rationale":""}`;
 
 export async function generateMealPlan(
   profile: ProfileInput,
@@ -199,69 +142,44 @@ DATE RANGE: ${range.startISO} to ${range.endISO}
 Generate a complete meal plan with breakfast, lunch, dinner, and optional dessert for each day. Include shopping list grouped by SEA market sections.`;
 
   try {
-    const message = await client.messages.create({
-      model: process.env.AI_MODEL || 'claude-3-5-sonnet-20241022',
-      max_tokens: 16000,
-      temperature: 1,
-      system: SYSTEM_PROMPT,
-      messages: [
-        {
-          role: 'user',
-          content: userMessage,
-        },
-      ],
+    const model = genAI.getGenerativeModel({
+      model: process.env.GEMINI_MODEL || 'gemini-3-flash-preview',
+      systemInstruction: SYSTEM_PROMPT,
+      generationConfig: {
+        responseMimeType: 'application/json',
+        temperature: 1,
+        maxOutputTokens: 8192,
+        thinking_level: 'high',
+      } as any,
     });
 
-    const content = message.content[0];
-    if (content.type !== 'text') {
-      throw new Error('Unexpected response type from AI');
-    }
+    const result = await model.generateContent(userMessage);
+    const jsonText = result.response.text().trim();
+    const parsed = JSON.parse(jsonText) as MealPlanJson;
 
-    let jsonText = content.text.trim();
-
-    // Remove markdown code blocks if present
-    if (jsonText.startsWith('```')) {
-      jsonText = jsonText.replace(/^```(?:json)?\n/, '').replace(/\n```$/, '');
-    }
-
-    const result = JSON.parse(jsonText) as MealPlanJson;
-
-    // Validate basic structure
-    if (!result.days || !Array.isArray(result.days)) {
+    if (!parsed.days || !Array.isArray(parsed.days)) {
       throw new Error('Invalid meal plan structure: missing days array');
     }
 
-    return result;
+    return parsed;
   } catch (error) {
     console.error('AI generation error:', error);
 
     // Retry once if JSON parsing failed
     if (error instanceof SyntaxError) {
       console.log('Retrying AI request due to JSON parse error...');
-      const retryMessage = await client.messages.create({
-        model: process.env.AI_MODEL || 'claude-3-5-sonnet-20241022',
-        max_tokens: 16000,
-        temperature: 0.7,
-        system: SYSTEM_PROMPT + '\n\nIMPORTANT: Return ONLY valid JSON, no markdown, no explanations.',
-        messages: [
-          {
-            role: 'user',
-            content: userMessage,
-          },
-        ],
+      const retryModel = genAI.getGenerativeModel({
+        model: process.env.GEMINI_MODEL || 'gemini-3-flash-preview',
+        systemInstruction: SYSTEM_PROMPT + '\n\nIMPORTANT: Return ONLY valid JSON, no markdown, no explanations.',
+        generationConfig: {
+          responseMimeType: 'application/json',
+          temperature: 0.7,
+          maxOutputTokens: 8192,
+        } as any,
       });
 
-      const retryContent = retryMessage.content[0];
-      if (retryContent.type !== 'text') {
-        throw new Error('Unexpected response type from AI on retry');
-      }
-
-      let retryJsonText = retryContent.text.trim();
-      if (retryJsonText.startsWith('```')) {
-        retryJsonText = retryJsonText.replace(/^```(?:json)?\n/, '').replace(/\n```$/, '');
-      }
-
-      return JSON.parse(retryJsonText) as MealPlanJson;
+      const retryResult = await retryModel.generateContent(userMessage);
+      return JSON.parse(retryResult.response.text().trim()) as MealPlanJson;
     }
 
     throw error;

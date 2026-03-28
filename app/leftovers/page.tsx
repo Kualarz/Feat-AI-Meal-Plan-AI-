@@ -1,8 +1,6 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Navbar } from '@/components/Navbar';
-import { MainNavigation } from '@/components/MainNavigation';
 import { Button } from '@/components/Button';
 import { Card } from '@/components/Card';
 import { Input } from '@/components/Input';
@@ -200,17 +198,13 @@ export default function LeftoversPage() {
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      <Navbar />
-
       <div className="flex flex-1 overflow-hidden">
-        {/* Sidebar Navigation */}
-        <MainNavigation className="hidden md:block w-64 overflow-y-auto" />
 
         {/* Main Content */}
         <div className="flex-1 flex flex-col overflow-hidden">
           <div className="flex-1 overflow-y-auto p-8">
             <div className="max-w-5xl mx-auto w-full">
-              <h2 className="text-3xl font-bold text-foreground mb-8">Leftover Optimizer</h2>
+              <h2 className="text-4xl font-display text-foreground mb-8">Leftover Optimizer</h2>
 
               {/* Expiration Calendar */}
               {leftovers.length > 0 && (
@@ -237,7 +231,7 @@ export default function LeftoversPage() {
 
               {/* Add Leftover Form */}
               <Card className="mb-8">
-                <h3 className="text-xl font-semibold text-foreground mb-6">
+                <h3 className="text-xl font-display text-foreground mb-6 uppercase tracking-widest">
                   Add Leftover Ingredients
                 </h3>
 
@@ -339,7 +333,7 @@ export default function LeftoversPage() {
                   <div className="mb-6">
                     <div className="flex justify-between items-center mb-4">
                       <div>
-                        <h3 className="text-2xl font-bold text-foreground">
+                        <h3 className="text-3xl font-display text-foreground">
                           Your Leftovers
                           {selectedDate && (
                             <span className="text-base text-muted-foreground font-normal ml-2">
@@ -367,8 +361,8 @@ export default function LeftoversPage() {
 
                       return (
                         <div key={category} className="mb-6">
-                          <h4 className="text-lg font-semibold text-foreground mb-3 flex items-center gap-2">
-                            <span>{CATEGORY_EMOJI[category]}</span>
+                          <h4 className="text-xl font-display text-foreground mb-3 flex items-center gap-2">
+                            <span className="text-2xl">{CATEGORY_EMOJI[category]}</span>
                             <span>{category}</span>
                             <span className="text-sm font-normal text-muted-foreground">
                               ({items.filter((i) => !i.used).length}/{items.length})
@@ -404,7 +398,7 @@ export default function LeftoversPage() {
                                     <div className="flex-1 min-w-0">
                                       <div className="flex items-baseline gap-2">
                                         <p
-                                          className={`font-medium ${
+                                          className={`font-display text-lg ${
                                             item.used ? 'line-through text-muted-foreground' : 'text-foreground'
                                           }`}
                                         >
@@ -443,6 +437,7 @@ export default function LeftoversPage() {
                                     <Button
                                       variant="outline"
                                       onClick={() => removeLeftover(item.id)}
+                                      aria-label={`Remove ${item.name}`}
                                       className="text-destructive hover:bg-destructive/10"
                                     >
                                       ✕
@@ -463,7 +458,7 @@ export default function LeftoversPage() {
                         disabled={loading || getActiveIngredients().length === 0}
                         className="w-full"
                       >
-                        {loading ? 'Generating recipes...' : '✨ Generate Recipe Ideas'}
+                        {loading ? 'Generating recipes…' : '✨ Generate Recipe Ideas'}
                       </Button>
                     </div>
                   </div>
@@ -474,9 +469,9 @@ export default function LeftoversPage() {
               {loading && (
                 <Card>
                   <div className="text-center py-12">
-                    <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary mb-4"></div>
-                    <p className="text-muted-foreground">
-                      Searching for creative recipes with your leftovers...
+                    <div className="inline-block motion-safe:animate-spin rounded-full h-8 w-8 border-b-2 border-primary mb-4"></div>
+                    <p className="text-muted-foreground font-display uppercase tracking-widest text-xs">
+                      Searching for creative recipes with your leftovers…
                     </p>
                   </div>
                 </Card>
@@ -485,7 +480,7 @@ export default function LeftoversPage() {
               {/* Recipe Suggestions */}
               {suggestions.length > 0 && (
                 <div className="space-y-6">
-                  <h3 className="text-2xl font-bold text-foreground">
+                  <h3 className="text-2xl font-display text-foreground">
                     Recipe Ideas Using Your Leftovers
                   </h3>
 

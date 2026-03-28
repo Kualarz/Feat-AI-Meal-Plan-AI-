@@ -26,9 +26,9 @@ export async function POST(request: NextRequest) {
     }
 
     // Validate API key
-    const apiKey = process.env.ANTHROPIC_API_KEY;
+    const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) {
-      console.error('[AI Leftovers] ANTHROPIC_API_KEY not configured');
+      console.error('[AI Leftovers] GEMINI_API_KEY not configured');
       return NextResponse.json(
         createErrorResponse(500, ErrorMessages.AI_NO_API_KEY),
         { status: 500 }

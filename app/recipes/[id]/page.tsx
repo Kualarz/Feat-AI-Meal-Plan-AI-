@@ -2,13 +2,18 @@
 
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import Link from 'next/link';
 import Image from 'next/image';
 import { Button } from '@/components/Button';
 import { Card } from '@/components/Card';
-import { Navbar } from '@/components/Navbar';
-import { MainNavigation } from '@/components/MainNavigation';
 import { AddToPlannerModal } from '@/components/AddToPlannerModal';
+import { IngredientDetailModal } from '@/components/IngredientDetailModal';
+import {
+  Heart, Bookmark, Check, Clock, Flame, DollarSign, Star,
+  ArrowLeft, Sparkles, ChefHat, Share2, MoreHorizontal,
+  Beef, Wheat, Droplets, Zap,
+} from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { formatRecipePrice, getCurrencySymbol } from '@/lib/currency';
 
 interface Ingredient {
   name: string;
@@ -41,115 +46,41 @@ interface Recipe {
   imageUrl: string | null;
   sourceUrl: string | null;
   tags: string | null;
+  rating: number | null;
 }
 
-// Map cuisine to flag emoji for the origin badge
 const cuisineFlags: Record<string, string> = {
-  Cambodian: '🇰🇭',
-  Thai: '🇹🇭',
-  Vietnamese: '🇻🇳',
-  Australian: '🇦🇺',
-  American: '🇺🇸',
-  Malaysian: '🇲🇾',
-  Indian: '🇮🇳',
-  Italian: '🇮🇹',
-  Mexican: '🇲🇽',
-  Chinese: '🇨🇳',
-  Japanese: '🇯🇵',
-  Korean: '🇰🇷',
+  Cambodian: '🇰🇭', Thai: '🇹🇭', Vietnamese: '🇻🇳', Australian: '🇦🇺',
+  American: '🇺🇸', Malaysian: '🇲🇾', Indian: '🇮🇳', Italian: '🇮🇹',
+  Mexican: '🇲🇽', Chinese: '🇨🇳', Japanese: '🇯🇵', Korean: '🇰🇷',
+  French: '🇫🇷', Spanish: '🇪🇸', Greek: '🇬🇷', Lebanese: '🇱🇧',
+  Turkish: '🇹🇷', Moroccan: '🇲🇦', Ethiopian: '🇪🇹', Nigerian: '🇳🇬',
+  Brazilian: '🇧🇷', Peruvian: '🇵🇪',
 };
 
-// Map cuisine to a short origin description
 const cuisineOrigins: Record<string, string> = {
-  Cambodian: 'A beloved dish from the Kingdom of Cambodia, known for its balance of sweet, sour, salty, and bitter flavors rooted in Khmer culinary traditions.',
-  Thai: 'From the vibrant kitchens of Thailand, this dish showcases the iconic Thai balance of spicy, sour, sweet, and savory.',
-  Vietnamese: 'A gem of Vietnamese cuisine, celebrated for its fresh herbs, clean flavors, and the harmony of textures that define the country\'s food culture.',
-  Australian: 'A taste of Australia, reflecting the country\'s love for fresh, high-quality local produce and relaxed cooking style.',
-  American: 'An American classic that embodies the bold, hearty comfort-food traditions of the United States.',
-  Malaysian: 'From the multicultural kitchens of Malaysia, blending Malay, Chinese, and Indian culinary influences.',
-  Indian: 'A staple of Indian cuisine, rich with aromatic spices and centuries of culinary heritage.',
-  Italian: 'From the heart of Italy, where simple, fresh ingredients are transformed into unforgettable dishes.',
-  Mexican: 'A vibrant creation from Mexico, bursting with bold chili flavors, fresh herbs, and ancient culinary traditions.',
-  Chinese: 'From the diverse regions of China, showcasing techniques and flavors refined over thousands of years.',
-  Japanese: 'A refined Japanese dish that embodies the principles of balance, seasonality, and umami.',
-  Korean: 'From Korea\'s dynamic food culture, known for its bold fermented flavors and communal dining traditions.',
+  Cambodian: 'Cambodia — the Kingdom of Wonder — has one of Southeast Asia\'s most underrated food traditions. Khmer cuisine balances sweet, sour, salty, and bitter in a single dish, often built on a fragrant paste of lemongrass, galangal, and turmeric called kroeung. Meals are eaten family-style, with rice at the center of every table.',
+  Thai: 'Thai cuisine is world-famous for its explosive, layered flavors — the burn of fresh chilies, the brightness of lime, the depth of fish sauce, and the sweetness of palm sugar all at once. Each region has its own identity: fiery curries in the south, herbal soups in the north, and stir-fries in the bustling central plains.',
+  Vietnamese: 'Vietnamese cooking is defined by freshness, balance, and restraint. Dishes are built around a harmony of textures — tender meats, crunchy pickled vegetables, and silky broths — with a generous hand of fresh herbs. The French colonial era left a lasting mark in the form of baguettes and strong coffee.',
+  Italian: 'Italian food is the art of elevating simple, high-quality ingredients. Each of Italy\'s 20 regions has its own distinct culinary identity: creamy risottos in the north, wood-fired pizzas in Naples, seafood on the coasts, and cured meats in the rolling hills of Tuscany. The golden rule is never to overcomplicate.',
+  Japanese: 'Japanese cuisine is guided by the philosophy of washoku — harmony, balance, and respect for seasonality. The concept of umami, the deeply savory fifth taste, is central to everything from miso to aged soy sauce. Presentation is considered as important as flavor, and every ingredient is treated with near-ceremonial care.',
+  Mexican: 'Mexican cuisine is one of only two in the world recognized by UNESCO as an Intangible Cultural Heritage. It traces back thousands of years to the Aztec and Mayan civilizations, with corn, chili, and cacao at its core. The complex, earthy sauces known as moles can contain over thirty ingredients and take days to prepare.',
+  Indian: 'Indian cooking is a vast tapestry of regional flavors, spice traditions, and ancient techniques. The north favors rich, dairy-based curries and tandoor-baked breads; the south leans on coconut, tamarind, and fiery pepper. Ayurvedic principles have shaped Indian food philosophy for millennia, treating spices as medicine as much as flavor.',
+  Chinese: 'Chinese cuisine encompasses eight distinct culinary traditions — from the numbing spice of Sichuan to the delicate dim sum of Cantonese kitchens. With over 5,000 years of culinary history, China developed techniques like stir-frying, steaming, and fermenting that influenced much of Asian cooking. Ingredients are chosen for both flavor and their perceived health properties.',
+  Korean: 'Korean food is built on the art of fermentation. Kimchi, doenjang (fermented soybean paste), and gochujang (chili paste) are pantry essentials that can take months or years to develop their full flavor. Meals are communal affairs with multiple small dishes called banchan surrounding a central bowl of rice or soup.',
+  Malaysian: 'Malaysian cuisine is a beautiful collision of Malay, Chinese, and Indian food cultures, shaped by centuries of spice trade and migration. Coconut milk, lemongrass, pandan, and belacan (shrimp paste) are the building blocks of countless dishes. Hawker culture — eating from open-air street stalls — is central to daily Malaysian life.',
+  American: 'American cooking is a melting pot of immigrant traditions that evolved into its own distinct identity — from Southern BBQ slow-smoked over hardwood, to New England clam chowder, to the California obsession with fresh, local produce. Comfort food runs deep in the culture, with recipes passed through generations as acts of love.',
 };
 
-// Map cookware names to icons
-const cookwareIcons: Record<string, string> = {
-  wok: '🥘',
-  pan: '🍳',
-  skillet: '🍳',
-  pot: '🫕',
-  stockpot: '🫕',
-  saucepan: '🫕',
-  oven: '♨️',
-  toaster: '♨️',
-  grill: '🔥',
-  knife: '🔪',
-  board: '🪵',
-  bowl: '🥣',
-  whisk: '🥄',
-  spatula: '🥄',
-  spoon: '🥄',
-  ladle: '🥄',
-  mixer: '⚡',
-  strainer: '🧊',
-  colander: '🧊',
-  tray: '📐',
-  foil: '📄',
-  brush: '🖌️',
-  rack: '📐',
-  grater: '🧀',
-  pestle: '⚗️',
-  mortar: '⚗️',
-  steamer: '♨️',
-  paper: '📄',
-  dish: '🍽️',
-  towel: '🧻',
-  zester: '🍋',
-  skimmer: '🥄',
-  boiler: '🫕',
-};
-
-function getCookwareIcon(name: string): string {
-  const lower = name.toLowerCase();
-  for (const [key, icon] of Object.entries(cookwareIcons)) {
-    if (lower.includes(key)) return icon;
-  }
-  return '🔧';
-}
-
-// Map ingredient names to mini icons
 const ingredientIcons: Record<string, string> = {
-  beef: '🥩', pork: '🥩', ribs: '🥩', steak: '🥩', lamb: '🥩',
-  chicken: '🍗', turkey: '🍗',
-  fish: '🐟', salmon: '🐟', barramundi: '🐟', snapper: '🐟', tuna: '🐟',
-  shrimp: '🦐', prawn: '🦐', squid: '🦑',
-  egg: '🥚', eggs: '🥚',
-  rice: '🍚', noodle: '🍜', pasta: '🍝', vermicelli: '🍜',
-  bread: '🍞', baguette: '🥖', bun: '🍔',
-  tomato: '🍅', cucumber: '🥒', onion: '🧅', garlic: '🧄',
-  potato: '🥔', carrot: '🥕', broccoli: '🥦', eggplant: '🍆',
-  pepper: '🌶️', chili: '🌶️', chilli: '🌶️',
-  lettuce: '🥬', bean: '🫘', pea: '🫛', asparagus: '🌿',
-  mushroom: '🍄',
-  lemon: '🍋', lime: '🍋', orange: '🍊',
-  coconut: '🥥', peanut: '🥜',
-  cheese: '🧀', butter: '🧈', cream: '🥛', milk: '🥛', yogurt: '🥛',
-  flour: '🌾', cornmeal: '🌽', sugar: '🍬', honey: '🍯',
-  chocolate: '🍫', strawberr: '🍓', blueberr: '🫐', raspberr: '🫐', berr: '🫐',
-  oil: '🫒', olive: '🫒',
-  salt: '🧂', vinegar: '🫗',
-  ginger: '🫚', lemongrass: '🌿', basil: '🌿', herb: '🌿', cilantro: '🌿',
-  dill: '🌿', parsley: '🌿', mint: '🌿',
-  soy: '🥫', sauce: '🥫', paste: '🥫', stock: '🥫', ketchup: '🥫', mustard: '🟡',
-  water: '💧',
-  tofu: '🟫',
-  papaya: '🥭',
-  corn: '🌽',
-  vanilla: '🌸',
-  baking: '🧪',
+  beef: '🥩', chicken: '🍗', pork: '🥩', fish: '🐟', shrimp: '🦐', egg: '🥚',
+  rice: '🍚', noodle: '🍜', pasta: '🍝', bread: '🍞', flour: '🌾',
+  tomato: '🍅', onion: '🧅', garlic: '🧄', pepper: '🌶️', carrot: '🥕',
+  lemon: '🍋', lime: '🍋', coconut: '🥥', milk: '🥛', cream: '🥛',
+  butter: '🧈', oil: '🫒', salt: '🧂', sugar: '🍬', ginger: '🫚',
+  avocado: '🥑', mushroom: '🍄', spinach: '🥬', potato: '🥔',
+  soy: '🫙', cheese: '🧀', yogurt: '🥛', cilantro: '🌿', basil: '🌿',
+  cumin: '🫙', turmeric: '🟡', coriander: '🌿', paprika: '🌶️',
 };
 
 function getIngredientIcon(name: string): string {
@@ -160,694 +91,644 @@ function getIngredientIcon(name: string): string {
   return '🥄';
 }
 
-function getDifficultyColor(difficulty: string): string {
-  switch (difficulty.toLowerCase()) {
-    case 'easy': return 'bg-green-500/15 text-green-600 dark:text-green-400 border-green-500/30';
-    case 'medium': return 'bg-yellow-500/15 text-yellow-600 dark:text-yellow-400 border-yellow-500/30';
-    case 'hard': return 'bg-red-500/15 text-red-600 dark:text-red-400 border-red-500/30';
-    default: return 'bg-primary/10 text-primary border-primary/30';
+const getDifficultyColor = (difficulty: string) => {
+  switch (difficulty?.toLowerCase()) {
+    case 'easy': return 'bg-brand-green/10 text-brand-green border-brand-green/20';
+    case 'medium': return 'bg-amber-500/10 text-amber-600 border-amber-500/20';
+    case 'hard': return 'bg-rose-500/10 text-rose-500 border-rose-500/20';
+    default: return 'bg-brand-green/10 text-brand-green border-brand-green/20';
   }
-}
+};
 
-/** Parse stepsMd into individual numbered steps */
 function parseSteps(stepsMd: string): { section: string | null; steps: string[] }[] {
-  // Handle both real newlines and literal \n from the database
-  // First replace literal backslash-n with real newlines, then split
   const normalized = stepsMd.replace(/\\n/g, '\n');
   const lines = normalized.split('\n').filter((l) => l.trim());
   const sections: { section: string | null; steps: string[] }[] = [];
   let current: { section: string | null; steps: string[] } = { section: null, steps: [] };
-
   for (const line of lines) {
     const trimmed = line.trim();
-    // Check if it's a section header (like "For Ribs:" or "For Cornbread:")
-    if (/^(for\s+.+):$/i.test(trimmed)) {
-      if (current.steps.length > 0 || current.section) {
-        sections.push(current);
-      }
+    if (/^(for\s+.+|prep|cook|serve|finish):?$/i.test(trimmed)) {
+      if (current.steps.length > 0 || current.section) sections.push(current);
       current = { section: trimmed.replace(/:$/, ''), steps: [] };
     } else {
-      // Remove leading number and period/dot
       const stepText = trimmed.replace(/^\d+\.\s*/, '');
       if (stepText) current.steps.push(stepText);
     }
   }
-  if (current.steps.length > 0 || current.section) {
-    sections.push(current);
-  }
+  if (current.steps.length > 0 || current.section) sections.push(current);
   return sections;
 }
 
 export default function RecipeDetailPage() {
   const params = useParams();
   const router = useRouter();
+
   const [recipe, setRecipe] = useState<Recipe | null>(null);
   const [loading, setLoading] = useState(true);
-  const [checkedIngredients, setCheckedIngredients] = useState<{
-    [key: number]: boolean;
-  }>({});
   const [plannerModalOpen, setPlannerModalOpen] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
   const [isSaved, setIsSaved] = useState(false);
+  const [isLiked, setIsLiked] = useState(false);
+  const [likeCount, setLikeCount] = useState(0);
   const [userRating, setUserRating] = useState(0);
-  const [similarRecipes, setSimilarRecipes] = useState<Recipe[]>([]);
+  const [checkedIngredients, setCheckedIngredients] = useState<Set<number>>(new Set());
+  const [selectedIngredientName, setSelectedIngredientName] = useState<string | null>(null);
+  const [userCurrency, setUserCurrency] = useState('USD');
+
+  // Steps AI
+  const [stepData, setStepData] = useState<Record<number, { tips: string[]; highlights: { word: string; explanation: string }[] }>>({});
+  const [loadingTips, setLoadingTips] = useState<Record<number, boolean>>({});
 
   useEffect(() => {
     loadRecipe();
+    fetchUserCurrency();
+    if (params.id) {
+      try {
+        const prev: string[] = JSON.parse(localStorage.getItem('recentlyViewed') || '[]');
+        const updated = [params.id, ...prev.filter((id) => id !== params.id)].slice(0, 20);
+        localStorage.setItem('recentlyViewed', JSON.stringify(updated));
+      } catch {}
+    }
   }, [params.id]);
 
   useEffect(() => {
     if (recipe) {
       checkIfSaved();
-      loadUserRating();
-      loadSimilarRecipes();
+      loadLikeStatus();
+      setUserRating(recipe.rating || 0);
     }
   }, [recipe]);
 
+  const fetchUserCurrency = async () => {
+    const token = localStorage.getItem('token');
+    if (token) {
+      try {
+        const res = await fetch('/api/preferences', {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (res.ok) {
+          const data = await res.json();
+          if (data.currency) {
+            setUserCurrency(data.currency);
+            return;
+          }
+        }
+      } catch {}
+    }
+
+    // Fallback to localStorage for guest/setup users
+    const setupData = localStorage.getItem('setupData');
+    if (setupData) {
+      try {
+        const data = JSON.parse(setupData);
+        if (data.currency) setUserCurrency(data.currency);
+      } catch {}
+    }
+  };
+
   const loadRecipe = async () => {
     try {
-      const response = await fetch(`/api/recipes/${params.id}`);
-      if (!response.ok) {
-        throw new Error('Recipe not found');
-      }
-      const data = await response.json();
-      setRecipe(data);
-      // Track recently viewed
-      try {
-        const raw = localStorage.getItem('recentlyViewed');
-        const existing: any[] = raw ? JSON.parse(raw) : [];
-        const entry = {
-          id: data.id, title: data.title, imageUrl: data.imageUrl,
-          cuisine: data.cuisine, timeMins: data.timeMins, kcal: data.kcal,
-          viewedAt: new Date().toISOString(),
-        };
-        const filtered = existing.filter((r: any) => r.id !== data.id);
-        localStorage.setItem('recentlyViewed', JSON.stringify([entry, ...filtered].slice(0, 20)));
-      } catch {}
-    } catch (error) {
-      console.error('Error loading recipe:', error);
-      alert('Recipe not found');
+      const res = await fetch(`/api/recipes/${params.id}`);
+      if (!res.ok) throw new Error();
+      setRecipe(await res.json());
+    } catch {
       router.push('/recipes');
     } finally {
       setLoading(false);
     }
   };
 
-  const checkIfSaved = () => {
-    if (!recipe) return;
-    const saved = localStorage.getItem('savedRecipes');
-    const savedIds = saved ? JSON.parse(saved) : [];
-    setIsSaved(savedIds.includes(recipe.id));
-  };
-
-  const toggleSaveRecipe = () => {
-    if (!recipe) return;
-    const saved = localStorage.getItem('savedRecipes');
-    let savedIds = saved ? JSON.parse(saved) : [];
-
-    if (isSaved) {
-      savedIds = savedIds.filter((id: string) => id !== recipe.id);
-      setSuccessMessage('Recipe removed from saved');
-    } else {
-      savedIds.push(recipe.id);
-      setSuccessMessage('Recipe saved successfully!');
-    }
-
-    localStorage.setItem('savedRecipes', JSON.stringify(savedIds));
-    setIsSaved(!isSaved);
-    setTimeout(() => setSuccessMessage(''), 3000);
-  };
-
-  const loadUserRating = () => {
-    if (!recipe) return;
-    const ratings = localStorage.getItem('recipeRatings');
-    const ratingMap = ratings ? JSON.parse(ratings) : {};
-    setUserRating(ratingMap[recipe.id] || 0);
-  };
-
-  const setRating = (rating: number) => {
-    if (!recipe) return;
-    const ratings = localStorage.getItem('recipeRatings');
-    const ratingMap = ratings ? JSON.parse(ratings) : {};
-    ratingMap[recipe.id] = rating;
-    localStorage.setItem('recipeRatings', JSON.stringify(ratingMap));
-    setUserRating(rating);
-    setSuccessMessage(`Rated ${rating}/5 stars!`);
-    setTimeout(() => setSuccessMessage(''), 3000);
-  };
-
-  const loadSimilarRecipes = async () => {
-    if (!recipe) return;
+  const checkIfSaved = async () => {
+    const token = localStorage.getItem('token');
+    if (!token || !recipe) return;
     try {
-      const response = await fetch(`/api/recipes?cuisine=${recipe.cuisine}&limit=3&excludeId=${recipe.id}`);
-      if (response.ok) {
-        const data = await response.json();
-        setSimilarRecipes(data.recipes || []);
+      const res = await fetch(`/api/recipes/${recipe.id}/save`, { headers: { Authorization: `Bearer ${token}` } });
+      if (res.ok) setIsSaved((await res.json()).saved);
+    } catch {}
+  };
+
+  const toggleSaveRecipe = async () => {
+    const token = localStorage.getItem('token');
+    if (!token || !recipe) return router.push('/auth/signin');
+    try {
+      const res = await fetch(`/api/recipes/${recipe.id}/save`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.status === 401) return router.push('/auth/signin');
+      if (res.ok) {
+        const data = await res.json();
+        setIsSaved(data.saved);
+        showToast(data.message || (data.saved ? 'Recipe saved!' : 'Removed from saved'));
+      } else {
+        showToast('Failed to update saved status');
       }
-    } catch (error) {
-      console.error('Error loading similar recipes:', error);
+    } catch {
+      showToast('Connection error');
     }
   };
 
-  const handlePrint = () => {
-    window.print();
-  };
-
-  const handleShare = async (platform: string) => {
+  const loadLikeStatus = async () => {
     if (!recipe) return;
-    const url = typeof window !== 'undefined' ? window.location.href : '';
-    const text = `Check out this recipe: ${recipe.title}`;
-
-    if (platform === 'copy') {
-      try {
-        await navigator.clipboard.writeText(url);
-        setSuccessMessage('Link copied to clipboard!');
-        setTimeout(() => setSuccessMessage(''), 3000);
-      } catch {
-        alert('Failed to copy link');
+    const token = localStorage.getItem('token');
+    try {
+      const res = await fetch(`/api/recipes/${recipe.id}/like`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setIsLiked(data.liked);
+        setLikeCount(data.count);
       }
-    } else if (platform === 'twitter') {
-      window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`, '_blank');
-    } else if (platform === 'facebook') {
-      window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`, '_blank');
+    } catch {}
+  };
+
+  const toggleLike = async () => {
+    const token = localStorage.getItem('token');
+    if (!token || !recipe) return router.push('/auth/signin');
+    const prev = isLiked;
+    setIsLiked(!prev);
+    setLikeCount((c) => (prev ? c - 1 : c + 1));
+    try {
+      const res = await fetch(`/api/recipes/${recipe.id}/like`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.status === 401) {
+        setIsLiked(prev);
+        setLikeCount((c) => (prev ? c + 1 : c - 1));
+        return router.push('/auth/signin');
+      }
+      if (!res.ok) throw new Error();
+      const data = await res.json();
+      setIsLiked(data.liked);
+      setLikeCount(data.count);
+    } catch {
+      setIsLiked(prev);
+      setLikeCount((c) => (prev ? c + 1 : c - 1));
+      showToast('Failed to update like');
     }
   };
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="flex flex-col items-center gap-3">
-          <div className="w-8 h-8 border-4 border-primary/30 border-t-primary rounded-full animate-spin" />
-          <p className="text-muted-foreground">Loading recipe...</p>
-        </div>
-      </div>
-    );
-  }
+  const setRating = async (rating: number) => {
+    const token = localStorage.getItem('token');
+    if (!token || !recipe) return router.push('/auth/signin');
+    const prev = userRating;
+    setUserRating(rating);
+    try {
+      const res = await fetch(`/api/recipes/${recipe.id}/rate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ rating }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setUserRating(data.rating);
+        showToast(`Rated ${rating} ★`);
+      } else {
+        setUserRating(prev);
+      }
+    } catch {
+      setUserRating(prev);
+    }
+  };
 
-  if (!recipe) {
-    return null;
-  }
+  const fetchStepTips = async (idx: number, text: string) => {
+    if (stepData[idx] || !recipe) return;
+    setLoadingTips((prev) => ({ ...prev, [idx]: true }));
+    try {
+      const res = await fetch('/api/ai/tips', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ step: text, ingredients: recipe.ingredientsJson }),
+      });
+      if (res.ok) { const data = await res.json(); setStepData((prev) => ({ ...prev, [idx]: data })); }
+    } finally {
+      setLoadingTips((prev) => ({ ...prev, [idx]: false }));
+    }
+  };
 
-  const ingredients: Ingredient[] = JSON.parse(recipe.ingredientsJson);
-  const cookware: string[] = recipe.cookwareJson ? JSON.parse(recipe.cookwareJson) : [];
+  const showToast = (msg: string) => {
+    setSuccessMessage(msg);
+    setTimeout(() => setSuccessMessage(''), 3000);
+  };
+
+  const renderStepText = (text: string, highlights: { word: string; explanation: string }[]) => {
+    if (!highlights?.length) return <>{text}</>;
+    let parts: (string | React.ReactNode)[] = [text];
+    highlights.forEach((h) => {
+      const nextParts: (string | React.ReactNode)[] = [];
+      parts.forEach((part) => {
+        if (typeof part !== 'string') { nextParts.push(part); return; }
+        const regex = new RegExp(`(${h.word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+        part.split(regex).forEach((s, i) => {
+          if (s.toLowerCase() === h.word.toLowerCase()) {
+            nextParts.push(
+              <span
+                key={`${h.word}-${i}`}
+                className="font-semibold text-accent underline decoration-dotted decoration-accent/60 cursor-help group/tip relative"
+              >
+                {s}
+                <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-56 p-3 bg-popover text-popover-foreground text-xs rounded-xl shadow-2xl border border-border opacity-0 group-hover/tip:opacity-100 transition-all pointer-events-none z-50 font-normal not-italic leading-relaxed">
+                  {h.explanation}
+                </span>
+              </span>
+            );
+          } else if (s) {
+            nextParts.push(s);
+          }
+        });
+      });
+      parts = nextParts;
+    });
+    return <>{parts}</>;
+  };
+
+  if (loading) return (
+    <div className="min-h-screen bg-background flex flex-col items-center justify-center gap-4">
+      <div className="w-10 h-10 border-4 border-primary/20 border-t-primary rounded-full motion-safe:animate-spin" />
+      <p className="text-muted-foreground font-display uppercase tracking-widest text-xs">Loading recipe…</p>
+    </div>
+  );
+
+  if (!recipe) return null;
+
+  const ingredients: Ingredient[] = (() => {
+    try { return JSON.parse(recipe.ingredientsJson); } catch { return []; }
+  })();
   const stepSections = parseSteps(recipe.stepsMd);
-  const flag = recipe.cuisine ? cuisineFlags[recipe.cuisine] || '🍽️' : '🍽️';
-  const originDescription = recipe.cuisine ? cuisineOrigins[recipe.cuisine] || '' : '';
+  const flag = recipe.cuisine ? (cuisineFlags[recipe.cuisine] || '🍽️') : '🍽️';
+  const origin = recipe.cuisine ? (cuisineOrigins[recipe.cuisine] || '') : '';
+  const dietList = recipe.dietTags ? [...new Set(recipe.dietTags.split(',').map((t) => t.trim()).filter(Boolean))] : [];
+
+  const hasNutrition = recipe.kcal || recipe.proteinG || recipe.carbsG || recipe.fatG;
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
-      <Navbar />
+    <div className="min-h-screen bg-background">
+      {/* Hero image */}
+      <div className="relative h-[380px] md:h-[460px]">
+        {recipe.imageUrl ? (
+          <Image src={recipe.imageUrl} alt={recipe.title} fill className="object-cover" priority />
+        ) : (
+          <div className="w-full h-full bg-gradient-to-br from-accent/20 to-primary/10 flex items-center justify-center text-8xl">🍽️</div>
+        )}
+        <div className="absolute inset-0 bg-gradient-to-t from-background via-background/30 to-transparent" />
 
-      <div className="flex flex-1 overflow-hidden">
-        {/* Sidebar Navigation */}
-        <MainNavigation className="hidden md:block w-64 overflow-y-auto" />
+        {/* Back button */}
+        <button
+          onClick={() => router.back()}
+          className="absolute top-6 left-6 z-10 flex items-center gap-2 px-4 py-2 bg-background/80 backdrop-blur-md rounded-pill border border-border/50 text-sm font-display text-foreground hover:bg-background transition-colors shadow-lg"
+        >
+          <ArrowLeft className="w-4 h-4" /> Back
+        </button>
 
-        {/* Main Content */}
-        <div className="flex-1 flex flex-col overflow-hidden">
-          <div className="flex-1 overflow-y-auto">
-
-            {/* ─── Hero Section ─── */}
-            <div className="relative">
-              {recipe.imageUrl ? (
-                <div className="w-full h-64 sm:h-80 md:h-96 relative overflow-hidden">
-                  <Image
-                    src={recipe.imageUrl}
-                    alt={recipe.title}
-                    fill
-                    className="object-cover"
-                    sizes="100vw"
-                    priority={true}
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-background via-background/40 to-transparent" />
-                </div>
-              ) : (
-                <div className="w-full h-48 bg-gradient-to-br from-primary/20 via-primary/10 to-background" />
-              )}
-
-              {/* Back button floating on hero */}
-              <div className="absolute top-4 left-4 md:left-8">
-                <Button
-                  variant="outline"
-                  onClick={() => router.back()}
-                  className="bg-background/80 backdrop-blur-sm border-border/50 shadow-lg"
-                >
-                  ← Back
-                </Button>
-              </div>
-
-              {/* Title overlay */}
-              <div className="absolute bottom-0 left-0 right-0 px-4 md:px-8 pb-6">
-                <div className="max-w-4xl mx-auto">
-                  <div className="flex flex-wrap items-center gap-2 mb-3">
-                    {recipe.cuisine && (
-                      <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-primary/90 text-primary-foreground rounded-full text-sm font-medium shadow-lg backdrop-blur-sm">
-                        <span className="text-base">{flag}</span>
-                        {recipe.cuisine}
-                      </span>
-                    )}
-                    {recipe.difficulty && (
-                      <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium border backdrop-blur-sm ${getDifficultyColor(recipe.difficulty)}`}>
-                        {recipe.difficulty.charAt(0).toUpperCase() + recipe.difficulty.slice(1)}
-                      </span>
-                    )}
-                    {recipe.timeMins && (
-                      <span className="inline-flex items-center gap-1 px-3 py-1 bg-background/80 backdrop-blur-sm text-foreground rounded-full text-sm font-medium border border-border/50 shadow-sm">
-                        ⏱️ {recipe.timeMins} min
-                      </span>
-                    )}
-                  </div>
-                  <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-foreground drop-shadow-sm">
-                    {recipe.title}
-                  </h1>
-                </div>
-              </div>
-            </div>
-
-            {/* ─── Content ─── */}
-            <div className="max-w-4xl mx-auto w-full px-4 md:px-8 py-8 space-y-8">
-
-              {/* Action Buttons */}
-              <div className="flex gap-2 flex-wrap">
-                <Button
-                  onClick={() => setPlannerModalOpen(true)}
-                  className="flex-1 min-w-[140px]"
-                >
-                  📅 Add to Planner
-                </Button>
-                <Button
-                  variant={isSaved ? 'primary' : 'outline'}
-                  onClick={toggleSaveRecipe}
-                >
-                  {isSaved ? '❤️ Saved' : '🤍 Save'}
-                </Button>
-                <Button variant="outline" onClick={handlePrint}>
-                  🖨️ Print
-                </Button>
-                <div className="flex gap-1">
-                  <Button variant="outline" onClick={() => handleShare('copy')} title="Copy link" className="px-3">🔗</Button>
-                  <Button variant="outline" onClick={() => handleShare('twitter')} title="Share on Twitter" className="px-3">𝕏</Button>
-                  <Button variant="outline" onClick={() => handleShare('facebook')} title="Share on Facebook" className="px-3">f</Button>
-                </div>
-              </div>
-
-              {/* ─── About This Dish ─── */}
-              <section>
-                <h2 className="text-2xl font-bold text-foreground mb-4 flex items-center gap-2">
-                  <span className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-lg">📖</span>
-                  About This Dish
-                </h2>
-                <Card>
-                  {recipe.description && (
-                    <p className="text-lg text-foreground leading-relaxed mb-4">
-                      {recipe.description}
-                    </p>
-                  )}
-                  {recipe.cuisine && originDescription && (
-                    <div className="flex items-start gap-3 p-4 bg-primary/5 rounded-xl border border-primary/10">
-                      <span className="text-3xl mt-0.5">{flag}</span>
-                      <div>
-                        <p className="text-sm font-semibold text-primary mb-1">Origin: {recipe.cuisine} Cuisine</p>
-                        <p className="text-sm text-muted-foreground leading-relaxed">{originDescription}</p>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Diet & Tags */}
-                  {recipe.dietTags && (
-                    <div className="flex flex-wrap gap-2 mt-4">
-                      {recipe.dietTags.split(',').map((tag) => (
-                        <span
-                          key={tag}
-                          className="px-3 py-1 bg-primary/10 text-primary rounded-full text-xs font-medium"
-                        >
-                          {tag.trim()}
-                        </span>
-                      ))}
-                    </div>
-                  )}
-                </Card>
-              </section>
-
-              {/* ─── Quick Stats ─── */}
-              <section>
-                <h2 className="text-2xl font-bold text-foreground mb-4 flex items-center gap-2">
-                  <span className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-lg">📊</span>
-                  Quick Stats
-                </h2>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  {recipe.timeMins && (
-                    <div className="bg-card rounded-2xl p-5 border border-border text-center hover:border-primary/30 transition-colors">
-                      <div className="text-3xl mb-2">⏱️</div>
-                      <div className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Cook Time</div>
-                      <div className="text-xl font-bold text-foreground">{recipe.timeMins} min</div>
-                    </div>
-                  )}
-                  {recipe.estimatedPrice != null && (
-                    <div className="bg-card rounded-2xl p-5 border border-border text-center hover:border-primary/30 transition-colors">
-                      <div className="text-3xl mb-2">💰</div>
-                      <div className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Est. Price</div>
-                      <div className="text-xl font-bold text-foreground">
-                        {recipe.estimatedPrice} {recipe.currency}
-                      </div>
-                    </div>
-                  )}
-                  {recipe.kcal && (
-                    <div className="bg-card rounded-2xl p-5 border border-border text-center hover:border-primary/30 transition-colors">
-                      <div className="text-3xl mb-2">🔥</div>
-                      <div className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Calories</div>
-                      <div className="text-xl font-bold text-foreground">{recipe.kcal} kcal</div>
-                    </div>
-                  )}
-                  {recipe.proteinG && (
-                    <div className="bg-card rounded-2xl p-5 border border-border text-center hover:border-primary/30 transition-colors">
-                      <div className="text-3xl mb-2">💪</div>
-                      <div className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Protein</div>
-                      <div className="text-xl font-bold text-foreground">{recipe.proteinG}g</div>
-                    </div>
-                  )}
-                </div>
-              </section>
-
-              {/* ─── Nutrition Facts ─── */}
-              {(recipe.carbsG || recipe.fatG || recipe.fiberG || recipe.sugarG || recipe.sodiumMg) && (
-                <section>
-                  <h2 className="text-2xl font-bold text-foreground mb-4 flex items-center gap-2">
-                    <span className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-lg">🥗</span>
-                    Nutrition Facts
-                  </h2>
-                  <Card>
-                    <div className="grid grid-cols-2 md:grid-cols-5 gap-6 mb-6">
-                      {recipe.carbsG && (
-                        <div className="text-center">
-                          <div className="text-2xl font-bold text-foreground">{recipe.carbsG}g</div>
-                          <div className="text-xs text-muted-foreground uppercase tracking-wide">Carbs</div>
-                        </div>
-                      )}
-                      {recipe.fatG && (
-                        <div className="text-center">
-                          <div className="text-2xl font-bold text-foreground">{recipe.fatG}g</div>
-                          <div className="text-xs text-muted-foreground uppercase tracking-wide">Fat</div>
-                        </div>
-                      )}
-                      {recipe.fiberG && (
-                        <div className="text-center">
-                          <div className="text-2xl font-bold text-foreground">{recipe.fiberG}g</div>
-                          <div className="text-xs text-muted-foreground uppercase tracking-wide">Fiber</div>
-                        </div>
-                      )}
-                      {recipe.sugarG && (
-                        <div className="text-center">
-                          <div className="text-2xl font-bold text-foreground">{recipe.sugarG}g</div>
-                          <div className="text-xs text-muted-foreground uppercase tracking-wide">Sugar</div>
-                        </div>
-                      )}
-                      {recipe.sodiumMg && (
-                        <div className="text-center">
-                          <div className="text-2xl font-bold text-foreground">{recipe.sodiumMg}mg</div>
-                          <div className="text-xs text-muted-foreground uppercase tracking-wide">Sodium</div>
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Macro Bars */}
-                    <div className="space-y-3 pt-4 border-t border-border">
-                      <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Macro Breakdown</h3>
-                      {recipe.carbsG && (
-                        <div>
-                          <div className="flex justify-between text-sm mb-1">
-                            <span className="text-foreground">Carbohydrates</span>
-                            <span className="text-muted-foreground font-medium">{recipe.carbsG}g</span>
-                          </div>
-                          <div className="w-full bg-border rounded-full h-2.5">
-                            <div className="bg-blue-500 h-2.5 rounded-full transition-all duration-700" style={{ width: `${Math.min((recipe.carbsG / 100) * 100, 100)}%` }} />
-                          </div>
-                        </div>
-                      )}
-                      {recipe.fatG && (
-                        <div>
-                          <div className="flex justify-between text-sm mb-1">
-                            <span className="text-foreground">Fat</span>
-                            <span className="text-muted-foreground font-medium">{recipe.fatG}g</span>
-                          </div>
-                          <div className="w-full bg-border rounded-full h-2.5">
-                            <div className="bg-amber-500 h-2.5 rounded-full transition-all duration-700" style={{ width: `${Math.min((recipe.fatG / 100) * 100, 100)}%` }} />
-                          </div>
-                        </div>
-                      )}
-                      {recipe.proteinG && (
-                        <div>
-                          <div className="flex justify-between text-sm mb-1">
-                            <span className="text-foreground">Protein</span>
-                            <span className="text-muted-foreground font-medium">{recipe.proteinG}g</span>
-                          </div>
-                          <div className="w-full bg-border rounded-full h-2.5">
-                            <div className="bg-rose-500 h-2.5 rounded-full transition-all duration-700" style={{ width: `${Math.min((recipe.proteinG / 100) * 100, 100)}%` }} />
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  </Card>
-                </section>
-              )}
-
-              {/* ─── Ingredients ─── */}
-              <section>
-                <h2 className="text-2xl font-bold text-foreground mb-4 flex items-center gap-2">
-                  <span className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-lg">🧾</span>
-                  Ingredients
-                  <span className="text-sm font-normal text-muted-foreground ml-auto">
-                    {ingredients.length} items
-                  </span>
-                </h2>
-                <Card>
-                  <div className="space-y-2">
-                    {ingredients.map((ingredient, index) => (
-                      <label
-                        key={index}
-                        className="flex items-start gap-3 p-3 rounded-xl cursor-pointer hover:bg-muted/50 transition-colors group"
-                      >
-                        <input
-                          type="checkbox"
-                          checked={checkedIngredients[index] || false}
-                          onChange={(e) =>
-                            setCheckedIngredients((prev) => ({
-                              ...prev,
-                              [index]: e.target.checked,
-                            }))
-                          }
-                          className="w-5 h-5 mt-0.5 rounded-md border-border text-primary focus:ring-primary accent-[hsl(var(--primary))]"
-                        />
-                        <span className="text-xl flex-shrink-0 mt-0.5 w-7 text-center">{getIngredientIcon(ingredient.name)}</span>
-                        <div className="flex-1">
-                          <span
-                            className={`transition-all duration-200 ${
-                              checkedIngredients[index]
-                                ? 'line-through text-muted-foreground'
-                                : 'text-foreground'
-                            }`}
-                          >
-                            {ingredient.qty && ingredient.unit
-                              ? <><span className="font-semibold">{ingredient.qty} {ingredient.unit}</span>{' '}</>
-                              : ''}
-                            {ingredient.name}
-                          </span>
-                          {ingredient.notes && (
-                            <span className="text-xs text-muted-foreground ml-1">({ingredient.notes})</span>
-                          )}
-                        </div>
-                      </label>
-                    ))}
-                  </div>
-                </Card>
-              </section>
-
-              {/* ─── Cookware Needed ─── */}
-              {cookware.length > 0 && (
-                <section>
-                  <h2 className="text-2xl font-bold text-foreground mb-4 flex items-center gap-2">
-                    <span className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-lg">🍳</span>
-                    Cookware Needed
-                  </h2>
-                  <div className="flex flex-wrap gap-3">
-                    {cookware.map((item, index) => (
-                      <div
-                        key={index}
-                        className="inline-flex items-center gap-2 px-4 py-2.5 bg-card rounded-2xl border border-border hover:border-primary/30 hover:bg-primary/5 transition-all duration-200"
-                      >
-                        <span className="text-xl">{getCookwareIcon(item)}</span>
-                        <span className="text-sm font-medium text-foreground">{item}</span>
-                      </div>
-                    ))}
-                  </div>
-                </section>
-              )}
-
-              {/* ─── Cooking Steps ─── */}
-              <section>
-                <h2 className="text-2xl font-bold text-foreground mb-4 flex items-center gap-2">
-                  <span className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-lg">👨‍🍳</span>
-                  Step-by-Step Instructions
-                </h2>
-                <div className="space-y-6">
-                  {stepSections.map((section, sIdx) => (
-                    <div key={sIdx}>
-                      {section.section && (
-                        <h3 className="text-lg font-bold text-primary mb-4 flex items-center gap-2">
-                          <span className="w-1.5 h-6 bg-primary rounded-full" />
-                          {section.section}
-                        </h3>
-                      )}
-                      <div className="space-y-3">
-                        {section.steps.map((step, index) => (
-                          <div
-                            key={index}
-                            className="flex gap-4 group"
-                          >
-                            <div className="flex-shrink-0 w-10 h-10 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary font-bold text-sm group-hover:bg-primary group-hover:text-primary-foreground transition-colors duration-200">
-                              {index + 1}
-                            </div>
-                            <div className="flex-1 pt-2">
-                              <p className="text-foreground leading-relaxed">{step}</p>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </section>
-
-              {/* ─── Food Safety ─── */}
-              {recipe.safetyMd && (
-                <section>
-                  <div className="bg-warning/10 border border-warning/30 rounded-2xl p-6">
-                    <h2 className="text-xl font-bold text-warning mb-3 flex items-center gap-2">
-                      ⚠️ Food Safety
-                    </h2>
-                    <p className="text-foreground leading-relaxed">{recipe.safetyMd}</p>
-                  </div>
-                </section>
-              )}
-
-              {/* ─── Rating ─── */}
-              <section>
-                <h2 className="text-2xl font-bold text-foreground mb-4 flex items-center gap-2">
-                  <span className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-lg">⭐</span>
-                  Rate This Recipe
-                </h2>
-                <Card>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm text-muted-foreground mb-3">Tap a star to rate</p>
-                      <div className="flex gap-2">
-                        {[1, 2, 3, 4, 5].map((star) => (
-                          <button
-                            key={star}
-                            onClick={() => setRating(star)}
-                            className="text-3xl cursor-pointer hover:scale-125 transition-transform duration-150"
-                          >
-                            {star <= userRating ? '⭐' : '☆'}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                    {userRating > 0 && (
-                      <div className="text-right">
-                        <p className="text-xs text-muted-foreground uppercase tracking-wide">Your rating</p>
-                        <p className="text-3xl font-bold text-primary">{userRating}/5</p>
-                      </div>
-                    )}
-                  </div>
-                </Card>
-              </section>
-
-              {/* ─── Source ─── */}
-              {recipe.sourceUrl && (
-                <div className="text-sm text-muted-foreground">
-                  Source:{' '}
-                  <a
-                    href={recipe.sourceUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-primary hover:opacity-80 underline underline-offset-2"
-                  >
-                    {recipe.sourceUrl}
-                  </a>
-                </div>
-              )}
-
-              {/* ─── Similar Recipes ─── */}
-              {similarRecipes.length > 0 && (
-                <section className="pt-4">
-                  <h2 className="text-2xl font-bold text-foreground mb-6 flex items-center gap-2">
-                    <span className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-lg">🍜</span>
-                    Similar Recipes
-                  </h2>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    {similarRecipes.map((similarRecipe) => (
-                      <Link key={similarRecipe.id} href={`/recipes/${similarRecipe.id}`}>
-                        <Card className="h-full cursor-pointer hover:shadow-lg hover:border-primary/20 transition-all duration-200">
-                          {similarRecipe.imageUrl && (
-                            <div className="w-full h-40 bg-muted rounded-xl overflow-hidden relative mb-4">
-                              <Image
-                                src={similarRecipe.imageUrl}
-                                alt={similarRecipe.title}
-                                fill
-                                className="object-cover"
-                                sizes="(max-width: 768px) 100vw, 33vw"
-                              />
-                            </div>
-                          )}
-                          <h3 className="text-lg font-semibold text-foreground mb-2">
-                            {similarRecipe.title}
-                          </h3>
-                          <div className="flex gap-2 mb-3">
-                            {similarRecipe.timeMins && (
-                              <span className="text-xs px-2 py-1 bg-primary/10 text-primary rounded-full">
-                                ⏱️ {similarRecipe.timeMins}min
-                              </span>
-                            )}
-                            {similarRecipe.kcal && (
-                              <span className="text-xs px-2 py-1 bg-primary/10 text-primary rounded-full">
-                                🔥 {similarRecipe.kcal}kcal
-                              </span>
-                            )}
-                          </div>
-                          <Button variant="outline" className="w-full">
-                            View Recipe →
-                          </Button>
-                        </Card>
-                      </Link>
-                    ))}
-                  </div>
-                </section>
-              )}
-            </div>
+        {/* Title overlay */}
+        <div className="absolute bottom-8 left-6 right-6 max-w-4xl mx-auto">
+          <div className="flex flex-wrap gap-2 mb-3">
+            <span className="px-3 py-1 bg-brand-green text-brand-eggshell rounded-pill text-xs font-display uppercase tracking-widest shadow-lg">
+              {flag} {recipe.cuisine}
+            </span>
+            {recipe.difficulty && (
+              <span className={`px-3 py-1 rounded-pill text-xs font-display uppercase tracking-widest border backdrop-blur-md ${getDifficultyColor(recipe.difficulty)}`}>
+                {recipe.difficulty}
+              </span>
+            )}
+            {dietList.map((tag) => (
+              <span key={tag} className="flex items-center gap-1.5 px-3 py-1.5 bg-brand-green/10 text-brand-green border border-brand-green/20 rounded-pill text-[10px] font-display uppercase tracking-widest backdrop-blur-md shadow-sm">
+                ✓ {tag}
+              </span>
+            ))}
           </div>
+          <h1 className="text-4xl md:text-6xl font-display text-foreground leading-tight tracking-tight drop-shadow-lg">
+            {recipe.title}
+          </h1>
         </div>
       </div>
 
-      {/* Success Message Toast */}
-      {successMessage && (
-        <div className="fixed bottom-6 right-6 bg-success text-white px-6 py-3 rounded-xl shadow-2xl animate-pulse z-50">
-          {successMessage}
-        </div>
-      )}
+      <div className="max-w-3xl mx-auto px-4 sm:px-6 py-10 space-y-12">
 
-      {/* Add to Planner Modal */}
-      {recipe && (
-        <AddToPlannerModal
-          isOpen={plannerModalOpen}
-          recipeId={recipe.id}
-          recipeName={recipe.title}
-          onClose={() => setPlannerModalOpen(false)}
-          onSuccess={(message) => {
-            setSuccessMessage(message);
-            setPlannerModalOpen(false);
-            setTimeout(() => setSuccessMessage(''), 3000);
-          }}
-        />
-      )}
+        {/* Quick stats */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          {[
+            { icon: <Clock className="w-5 h-5 text-blue-500" />, label: 'Time', value: recipe.timeMins ? `${recipe.timeMins} min` : '—', bg: 'bg-blue-500/8 border-blue-500/15' },
+            { icon: <Flame className="w-5 h-5 text-orange-500" />, label: 'Calories', value: recipe.kcal ? `${recipe.kcal} kcal` : '—', bg: 'bg-orange-500/8 border-orange-500/15' },
+            { icon: <DollarSign className="w-5 h-5 text-brand-green" />, label: 'Cost', value: recipe.estimatedPrice ? formatRecipePrice(recipe.estimatedPrice, recipe.currency || 'USD', userCurrency) : '—', bg: 'bg-brand-green/8 border-brand-green/15' },
+            { icon: null, label: 'Rating', value: null, bg: 'bg-yellow-500/8 border-yellow-500/15', isRating: true },
+          ].map((stat, i) => (
+            <Card key={i} className={`p-4 text-center ${stat.bg} border`}>
+              {stat.isRating ? (
+                <>
+                  <div className="flex justify-center gap-0.5 mb-1">
+                    {[1, 2, 3, 4, 5].map((s) => (
+                      <button key={s} onClick={() => setRating(s)} aria-label={`Rate ${s} stars`}>
+                        <Star className={`w-4 h-4 transition-colors ${s <= (userRating || recipe.rating || 0) ? 'fill-yellow-500 text-yellow-500' : 'text-muted-foreground/40'}`} />
+                      </button>
+                    ))}
+                  </div>
+                  <p className="text-[10px] font-display uppercase text-muted-foreground tracking-widest">Rating</p>
+                  <p className="text-lg font-display">{(recipe.rating || 0).toFixed(1)}</p>
+                </>
+              ) : (
+                <>
+                  <div className="flex justify-center mb-1">{stat.icon}</div>
+                  <p className="text-[10px] font-display uppercase text-muted-foreground tracking-widest">{stat.label}</p>
+                  <p className="text-lg font-display">{stat.value}</p>
+                </>
+              )}
+            </Card>
+          ))}
+        </div>
+
+        {/* Action buttons */}
+        <div className="flex gap-3">
+          <Button
+            onClick={() => {
+              if (!recipe) return;
+              try {
+                const stored = localStorage.getItem('feast_menu_queue');
+                const queue: any[] = stored ? JSON.parse(stored) : [];
+                if (!queue.find((r: any) => r.id === recipe.id)) {
+                  queue.push({
+                    id: recipe.id,
+                    title: recipe.title,
+                    imageUrl: recipe.imageUrl ?? null,
+                    cuisine: recipe.cuisine ?? null,
+                    timeMins: recipe.timeMins ?? null,
+                    kcal: recipe.kcal ?? null,
+                    difficulty: recipe.difficulty ?? null,
+                    dietTags: recipe.dietTags ?? null,
+                  });
+                  localStorage.setItem('feast_menu_queue', JSON.stringify(queue));
+                }
+                showToast('Added to Menu Queue ✓');
+              } catch {
+                showToast('Could not add to queue');
+              }
+            }}
+            className="flex-1 h-12 font-display rounded-pill shadow-md"
+          >
+            📅 Add to Menu
+          </Button>
+          <button
+            onClick={toggleSaveRecipe}
+            className={`h-12 px-5 rounded-pill border font-display text-sm flex items-center gap-2 transition-all ${isSaved ? 'bg-accent text-accent-foreground border-accent' : 'bg-card border-border text-foreground hover:border-accent/50'}`}
+          >
+            {isSaved ? <Check className="w-4 h-4" /> : <Bookmark className="w-4 h-4" />}
+            {isSaved ? 'Saved' : 'Save'}
+          </button>
+          <button
+            onClick={toggleLike}
+            className={`h-12 px-5 rounded-pill border font-display text-sm flex items-center gap-2 transition-all ${isLiked ? 'bg-rose-500/10 text-rose-500 border-rose-500' : 'bg-card border-border text-foreground hover:border-rose-300'}`}
+          >
+            <Heart className={`w-4 h-4 ${isLiked ? 'fill-rose-500' : ''}`} />
+            {likeCount > 0 ? likeCount : 'Like'}
+          </button>
+          <button
+            onClick={async () => {
+              if (navigator.share) {
+                try {
+                  await navigator.share({ title: recipe.title, url: window.location.href });
+                } catch (e) {
+                  if ((e as Error).name !== 'AbortError') showToast('Failed to share');
+                }
+              } else {
+                try {
+                  await navigator.clipboard.writeText(window.location.href);
+                  showToast('Link copied to clipboard!');
+                } catch {
+                  showToast('Failed to copy link');
+                }
+              }
+            }}
+            className="h-12 px-4 rounded-pill border border-border bg-card text-foreground hover:border-accent/50 transition-all"
+            aria-label="Share"
+          >
+            <Share2 className="w-4 h-4" />
+          </button>
+        </div>
+
+        {/* About the dish */}
+        <section className="space-y-4">
+          <SectionHeader color="bg-accent" title="About the Dish" />
+          <div className="space-y-5">
+            <p className="text-base text-foreground/80 font-body leading-relaxed">
+              {recipe.description}
+            </p>
+
+            {/* Diet tags */}
+
+            {/* Origin — theme-aware */}
+            {origin && (
+              <div className="flex items-start gap-4 p-5 bg-muted/60 border border-border rounded-2xl">
+                <span className="text-4xl leading-none mt-0.5 flex-shrink-0">{flag}</span>
+                <div>
+                  <h4 className="text-sm font-display text-foreground tracking-tight mb-1.5">
+                    {recipe.cuisine} Origin
+                  </h4>
+                  <p className="text-sm font-body text-muted-foreground leading-relaxed">{origin}</p>
+                </div>
+              </div>
+            )}
+          </div>
+        </section>
+
+        {/* Nutrition */}
+        {hasNutrition && (
+          <section className="space-y-4">
+            <SectionHeader color="bg-brand-orange" title="Nutrition" />
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              {[
+                { icon: <Flame className="w-4 h-4" />, label: 'Calories', value: recipe.kcal, unit: 'kcal', color: 'text-orange-500' },
+                { icon: <Beef className="w-4 h-4" />, label: 'Protein', value: recipe.proteinG, unit: 'g', color: 'text-rose-500' },
+                { icon: <Wheat className="w-4 h-4" />, label: 'Carbs', value: recipe.carbsG, unit: 'g', color: 'text-amber-500' },
+                { icon: <Droplets className="w-4 h-4" />, label: 'Fat', value: recipe.fatG, unit: 'g', color: 'text-blue-400' },
+                { icon: <Zap className="w-4 h-4" />, label: 'Fiber', value: recipe.fiberG, unit: 'g', color: 'text-brand-green' },
+                { icon: <span className="text-xs">🍬</span>, label: 'Sugar', value: recipe.sugarG, unit: 'g', color: 'text-pink-400' },
+                { icon: <span className="text-xs">🧂</span>, label: 'Sodium', value: recipe.sodiumMg, unit: 'mg', color: 'text-slate-400' },
+              ].filter((n) => n.value != null).map((n, i) => (
+                <div key={i} className="flex items-center gap-3 p-3 bg-card border border-border rounded-xl">
+                  <span className={n.color}>{n.icon}</span>
+                  <div>
+                    <p className="text-[10px] font-display uppercase text-muted-foreground tracking-wider">{n.label}</p>
+                    <p className="text-sm font-display font-semibold text-foreground">{n.value}{n.unit}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {/* Ingredients */}
+        <section className="space-y-4">
+          <div className="flex items-center justify-between">
+            <SectionHeader color="bg-brand-green" title={`Ingredients`} />
+            <span className="text-sm text-muted-foreground font-body">{ingredients.length} items</span>
+          </div>
+
+          <div className="bg-card border border-border rounded-2xl overflow-hidden divide-y divide-border">
+            {ingredients.map((ing, i) => (
+              <div key={i} className="flex items-center gap-3 px-4 py-3.5 hover:bg-muted/30 transition-colors">
+                {/* Checkbox */}
+                <button
+                  onClick={() => setCheckedIngredients((prev) => {
+                    const next = new Set(prev);
+                    next.has(i) ? next.delete(i) : next.add(i);
+                    return next;
+                  })}
+                  className={`w-6 h-6 rounded-full border-2 flex-shrink-0 flex items-center justify-center transition-all ${checkedIngredients.has(i) ? 'bg-brand-green border-brand-green' : 'border-border'}`}
+                  aria-label={`Check off ${ing.name}`}
+                >
+                  {checkedIngredients.has(i) && <Check className="w-3 h-3 text-white" />}
+                </button>
+
+                {/* Icon */}
+                <div className="w-9 h-9 rounded-full bg-muted flex items-center justify-center text-lg flex-shrink-0">
+                  {getIngredientIcon(ing.name)}
+                </div>
+
+                {/* Name + qty */}
+                <div className="flex-1 min-w-0">
+                  <p className={`text-sm font-medium text-foreground truncate ${checkedIngredients.has(i) ? 'line-through text-muted-foreground' : ''}`}>
+                    {ing.qty} {ing.unit} {ing.name}
+                  </p>
+                  {ing.notes && (
+                    <p className="text-xs text-muted-foreground truncate">{ing.notes}</p>
+                  )}
+                </div>
+
+                {/* Three dots → detail modal */}
+                <button
+                  onClick={() => setSelectedIngredientName(ing.name)}
+                  className="p-1.5 rounded-full hover:bg-muted text-muted-foreground hover:text-foreground transition-colors flex-shrink-0"
+                  aria-label={`More info about ${ing.name}`}
+                >
+                  <MoreHorizontal className="w-4 h-4" />
+                </button>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {/* Cooking Process */}
+        <section className="space-y-4">
+          <SectionHeader color="bg-primary" title="Cooking Process" />
+
+          <div className="space-y-8">
+            {stepSections.map((section, sIdx) => {
+              const sectionStartIdx = stepSections.slice(0, sIdx).reduce((acc, s) => acc + s.steps.length, 0);
+              return (
+                <div key={sIdx} className="space-y-4">
+                  {section.section && (
+                    <h3 className="text-xs font-display uppercase tracking-[0.2em] text-muted-foreground border-b border-border pb-2">
+                      {section.section}
+                    </h3>
+                  )}
+
+                  <div className="space-y-3">
+                    {section.steps.map((step, idx) => {
+                      const globalIdx = sectionStartIdx + idx;
+                      const showTipButton = globalIdx % 3 === 0; // Only every 3rd step
+                      const data = stepData[globalIdx];
+
+                      return (
+                        <div key={idx} className="flex gap-3">
+                          {/* Step number */}
+                          <div className="flex flex-col items-center flex-shrink-0">
+                            <div className="w-7 h-7 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs font-display font-bold shadow-sm">
+                              {globalIdx + 1}
+                            </div>
+                            {idx < section.steps.length - 1 && (
+                              <div className="w-px flex-1 bg-border mt-1.5 min-h-[16px]" />
+                            )}
+                          </div>
+
+                          {/* Step content */}
+                          <div className="flex-1 pb-4">
+                            <p className="text-sm font-body text-foreground leading-relaxed pt-1">
+                              {renderStepText(step, data?.highlights || [])}
+                            </p>
+
+                            {/* Tips — only on select steps */}
+                            {showTipButton && (
+                              <div className="mt-2">
+                                <AnimatePresence mode="wait">
+                                  {!data && !loadingTips[globalIdx] ? (
+                                    <motion.button
+                                      initial={{ opacity: 0 }}
+                                      animate={{ opacity: 1 }}
+                                      onClick={() => fetchStepTips(globalIdx, step)}
+                                      className="flex items-center gap-1.5 px-3 py-1.5 bg-accent/10 hover:bg-accent/20 text-accent rounded-pill font-display text-[10px] tracking-widest transition-all uppercase border border-accent/20"
+                                    >
+                                      <Sparkles className="h-3 w-3" /> Chef's Tip
+                                    </motion.button>
+                                  ) : loadingTips[globalIdx] ? (
+                                    <div className="flex items-center gap-2 text-[10px] font-display text-muted-foreground uppercase tracking-widest motion-safe:animate-pulse mt-1">
+                                      <ChefHat className="h-3.5 w-3.5" /> Thinking…
+                                    </div>
+                                  ) : data?.tips?.length ? (
+                                    <motion.div
+                                      initial={{ height: 0, opacity: 0 }}
+                                      animate={{ height: 'auto', opacity: 1 }}
+                                      className="mt-3 space-y-2 overflow-hidden"
+                                    >
+                                      {data.tips.map((tip, ti) => (
+                                        <div key={ti} className="flex gap-2.5 p-3 bg-accent/5 border border-accent/15 rounded-xl">
+                                          <ChefHat className="w-4 h-4 text-accent flex-shrink-0 mt-0.5" />
+                                          <p className="text-xs font-body text-foreground/80 leading-relaxed italic">{tip}</p>
+                                        </div>
+                                      ))}
+                                    </motion.div>
+                                  ) : null}
+                                </AnimatePresence>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </section>
+      </div>
+
+      {/* Ingredient detail modal */}
+      <IngredientDetailModal
+        ingredient={selectedIngredientName}
+        onClose={() => setSelectedIngredientName(null)}
+      />
+
+      <AddToPlannerModal
+        isOpen={plannerModalOpen}
+        onClose={() => setPlannerModalOpen(false)}
+        recipeId={recipe.id}
+        recipeName={recipe.title}
+        onSuccess={() => { showToast('Added to your plan!'); setPlannerModalOpen(false); }}
+      />
+
+      <AnimatePresence>
+        {successMessage && (
+          <motion.div
+            initial={{ opacity: 0, y: 50, x: '-50%' }}
+            animate={{ opacity: 1, y: 0, x: '-50%' }}
+            exit={{ opacity: 0, y: 50, x: '-50%' }}
+            className="fixed bottom-10 left-1/2 z-[110] px-6 py-3 bg-foreground text-background rounded-pill shadow-2xl font-display text-sm tracking-wide"
+          >
+            {successMessage}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
+  );
+}
+
+function SectionHeader({ color, title }: { color: string; title: string }) {
+  return (
+    <h2 className="text-xl font-display text-foreground tracking-tight flex items-center gap-2.5">
+      <span className={`w-1.5 h-6 ${color} rounded-full`} />
+      {title}
+    </h2>
   );
 }

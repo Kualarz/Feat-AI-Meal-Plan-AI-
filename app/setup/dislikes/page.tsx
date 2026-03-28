@@ -85,7 +85,7 @@ export default function SetupDislikesPage() {
                 value={dislikeInput}
                 onChange={e => setDislikeInput(e.target.value)}
                 onKeyDown={e => e.key === 'Enter' && addCustom()}
-                placeholder="Add custom dislike…"
+                placeholder="Add custom dislike..."
                 className="flex-1 px-3 py-2 border border-border bg-background text-foreground rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary"
               />
               <button type="button" onClick={addCustom} className="px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm hover:bg-primary/90 transition">Add</button>

@@ -1,0 +1,144 @@
+<h2>Recipe Chip — Final Design</h2>
+<p class="subtitle">Diet badge · country tag · calories · links to recipe page</p>
+
+<div class="section">
+  <div class="mockup">
+    <div class="mockup-header">Monday row — final chip design</div>
+    <div class="mockup-body" style="background:#f5f5f5;padding:12px;font-family:sans-serif;">
+
+      <div style="display:flex;align-items:stretch;gap:10px;">
+        <div style="width:44px;flex-shrink:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#22c55e;border-radius:10px;padding:6px 0;">
+          <div style="font-size:8px;color:rgba(255,255,255,0.8);text-transform:uppercase;letter-spacing:0.06em;">Mon</div>
+          <div style="font-size:18px;font-weight:900;color:#fff;line-height:1.1;">28</div>
+          <div style="font-size:7px;color:rgba(255,255,255,0.7);">Mar</div>
+        </div>
+
+        <div style="flex:1;background:#fff;border:1px solid #e5e7eb;border-radius:10px;padding:8px;display:flex;align-items:center;gap:8px;overflow-x:auto;min-height:96px;">
+
+          <!-- Chip 1 — Vegetarian, Italian, 520 kcal -->
+          <a href="#" style="flex-shrink:0;width:112px;border:1px solid #e5e7eb;border-radius:10px;overflow:hidden;background:#fff;box-shadow:0 1px 4px rgba(0,0,0,0.07);cursor:pointer;text-decoration:none;display:block;">
+            <div style="position:relative;height:62px;background:linear-gradient(135deg,#d1fae5,#6ee7b7);display:flex;align-items:center;justify-content:center;font-size:30px;">
+              🍝
+              <div style="position:absolute;top:4px;right:4px;width:16px;height:16px;background:rgba(0,0,0,0.45);border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:9px;cursor:pointer;">✕</div>
+              <div style="position:absolute;top:4px;left:4px;background:#22c55e;border-radius:20px;padding:1px 5px;display:flex;align-items:center;gap:2px;">
+                <span style="font-size:8px;">🥦</span>
+                <span style="font-size:7px;color:#fff;font-weight:700;">Veg</span>
+              </div>
+            </div>
+            <div style="padding:5px 7px;">
+              <div style="font-size:8.5px;font-weight:700;color:#111;line-height:1.2;margin-bottom:4px;">Pasta Carbonara</div>
+              <div style="display:flex;align-items:center;justify-content:space-between;gap:3px;">
+                <div style="display:inline-flex;align-items:center;gap:2px;background:#f3f4f6;border-radius:20px;padding:1px 5px;">
+                  <span style="font-size:9px;">🇮🇹</span>
+                  <span style="font-size:7px;color:#6b7280;">Italian</span>
+                </div>
+                <div style="display:inline-flex;align-items:center;gap:1px;">
+                  <span style="font-size:8px;">🔥</span>
+                  <span style="font-size:7.5px;color:#f97316;font-weight:700;">520</span>
+                </div>
+              </div>
+            </div>
+          </a>
+
+          <!-- Chip 2 — Vegan, Thai, 310 kcal -->
+          <a href="#" style="flex-shrink:0;width:112px;border:1px solid #e5e7eb;border-radius:10px;overflow:hidden;background:#fff;box-shadow:0 1px 4px rgba(0,0,0,0.07);cursor:pointer;text-decoration:none;display:block;">
+            <div style="position:relative;height:62px;background:linear-gradient(135deg,#fef3c7,#fde68a);display:flex;align-items:center;justify-content:center;font-size:30px;">
+              🥘
+              <div style="position:absolute;top:4px;right:4px;width:16px;height:16px;background:rgba(0,0,0,0.45);border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:9px;">✕</div>
+              <div style="position:absolute;top:4px;left:4px;background:#16a34a;border-radius:20px;padding:1px 5px;display:flex;align-items:center;gap:2px;">
+                <span style="font-size:8px;">🌱</span>
+                <span style="font-size:7px;color:#fff;font-weight:700;">Vegan</span>
+              </div>
+            </div>
+            <div style="padding:5px 7px;">
+              <div style="font-size:8.5px;font-weight:700;color:#111;line-height:1.2;margin-bottom:4px;">Tofu Pad Thai</div>
+              <div style="display:flex;align-items:center;justify-content:space-between;gap:3px;">
+                <div style="display:inline-flex;align-items:center;gap:2px;background:#f3f4f6;border-radius:20px;padding:1px 5px;">
+                  <span style="font-size:9px;">🇹🇭</span>
+                  <span style="font-size:7px;color:#6b7280;">Thai</span>
+                </div>
+                <div style="display:inline-flex;align-items:center;gap:1px;">
+                  <span style="font-size:8px;">🔥</span>
+                  <span style="font-size:7.5px;color:#f97316;font-weight:700;">310</span>
+                </div>
+              </div>
+            </div>
+          </a>
+
+          <!-- Chip 3 — Halal, Cambodian, 480 kcal -->
+          <a href="#" style="flex-shrink:0;width:112px;border:1px solid #e5e7eb;border-radius:10px;overflow:hidden;background:#fff;box-shadow:0 1px 4px rgba(0,0,0,0.07);cursor:pointer;text-decoration:none;display:block;">
+            <div style="position:relative;height:62px;background:linear-gradient(135deg,#ede9fe,#c4b5fd);display:flex;align-items:center;justify-content:center;font-size:30px;">
+              🍲
+              <div style="position:absolute;top:4px;right:4px;width:16px;height:16px;background:rgba(0,0,0,0.45);border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:9px;">✕</div>
+              <div style="position:absolute;top:4px;left:4px;background:#7c3aed;border-radius:20px;padding:1px 5px;display:flex;align-items:center;gap:2px;">
+                <span style="font-size:8px;">🕌</span>
+                <span style="font-size:7px;color:#fff;font-weight:700;">Halal</span>
+              </div>
+            </div>
+            <div style="padding:5px 7px;">
+              <div style="font-size:8.5px;font-weight:700;color:#111;line-height:1.2;margin-bottom:4px;">Khmer Fish Amok</div>
+              <div style="display:flex;align-items:center;justify-content:space-between;gap:3px;">
+                <div style="display:inline-flex;align-items:center;gap:2px;background:#f3f4f6;border-radius:20px;padding:1px 5px;">
+                  <span style="font-size:9px;">🇰🇭</span>
+                  <span style="font-size:7px;color:#6b7280;">Cambodian</span>
+                </div>
+                <div style="display:inline-flex;align-items:center;gap:1px;">
+                  <span style="font-size:8px;">🔥</span>
+                  <span style="font-size:7.5px;color:#f97316;font-weight:700;">480</span>
+                </div>
+              </div>
+            </div>
+          </a>
+
+          <!-- Chip 4 — Keto, American, 740 kcal -->
+          <a href="#" style="flex-shrink:0;width:112px;border:1px solid #e5e7eb;border-radius:10px;overflow:hidden;background:#fff;box-shadow:0 1px 4px rgba(0,0,0,0.07);cursor:pointer;text-decoration:none;display:block;">
+            <div style="position:relative;height:62px;background:linear-gradient(135deg,#fef9c3,#fbbf24);display:flex;align-items:center;justify-content:center;font-size:30px;">
+              🥩
+              <div style="position:absolute;top:4px;right:4px;width:16px;height:16px;background:rgba(0,0,0,0.45);border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:9px;">✕</div>
+              <div style="position:absolute;top:4px;left:4px;background:#f59e0b;border-radius:20px;padding:1px 5px;display:flex;align-items:center;gap:2px;">
+                <span style="font-size:8px;">🥑</span>
+                <span style="font-size:7px;color:#111;font-weight:700;">Keto</span>
+              </div>
+            </div>
+            <div style="padding:5px 7px;">
+              <div style="font-size:8.5px;font-weight:700;color:#111;line-height:1.2;margin-bottom:4px;">Ribeye Steak</div>
+              <div style="display:flex;align-items:center;justify-content:space-between;gap:3px;">
+                <div style="display:inline-flex;align-items:center;gap:2px;background:#f3f4f6;border-radius:20px;padding:1px 5px;">
+                  <span style="font-size:9px;">🇺🇸</span>
+                  <span style="font-size:7px;color:#6b7280;">American</span>
+                </div>
+                <div style="display:inline-flex;align-items:center;gap:1px;">
+                  <span style="font-size:8px;">🔥</span>
+                  <span style="font-size:7.5px;color:#f97316;font-weight:700;">740</span>
+                </div>
+              </div>
+            </div>
+          </a>
+
+          <!-- Drop zone -->
+          <div style="flex-shrink:0;width:76px;height:88px;border:2px dashed #d1d5db;border-radius:10px;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#d1d5db;gap:3px;">
+            <div style="font-size:18px;">⊕</div>
+            <div style="font-size:7px;text-align:center;line-height:1.4;">drop<br>here</div>
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>What's on each chip</h3>
+  <div style="font-family:sans-serif;font-size:11px;color:#374151;display:flex;flex-direction:column;gap:5px;">
+    <div style="display:flex;align-items:center;gap:8px;"><span style="font-size:14px;">🖼️</span> <span>Recipe image fills the top half</span></div>
+    <div style="display:flex;align-items:center;gap:8px;"><span style="font-size:14px;">🏷️</span> <span>Diet badge (colour-coded) — top-left of image</span></div>
+    <div style="display:flex;align-items:center;gap:8px;"><span style="font-size:14px;">✕</span> <span>Remove button — top-right of image</span></div>
+    <div style="display:flex;align-items:center;gap:8px;"><span style="font-size:14px;">📝</span> <span>Recipe title below image</span></div>
+    <div style="display:flex;align-items:center;gap:8px;"><span style="font-size:14px;">🏳️</span> <span>Country flag + name — bottom left</span></div>
+    <div style="display:flex;align-items:center;gap:8px;"><span style="font-size:14px;">🔥</span> <span>Calorie count — bottom right (orange)</span></div>
+    <div style="display:flex;align-items:center;gap:8px;"><span style="font-size:14px;">👆</span> <span>Tapping the card navigates to the recipe detail page</span></div>
+  </div>
+</div>
+
+<p class="subtitle" style="margin-top:12px;">Happy with this? Say yes and I'll write the full spec and start the implementation plan.</p>

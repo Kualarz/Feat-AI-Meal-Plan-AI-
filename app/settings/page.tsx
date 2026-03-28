@@ -3,278 +3,257 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Button } from '@/components/Button';
-import { Card } from '@/components/Card';
-import { Navbar } from '@/components/Navbar';
-import { MainNavigation } from '@/components/MainNavigation';
+import {
+  User, ChevronRight, CreditCard, Users,
+  Scale, Smartphone, ChefHat, AlertTriangle, ThumbsDown, Camera,
+  Sparkles, UserPlus, HelpCircle, MessageSquare,
+} from 'lucide-react';
 
-type Row = {
-  label: string;
-  description?: string;
-  right: React.ReactNode;
-};
+interface UserProfile {
+  name?: string | null;
+  email?: string | null;
+  avatarUrl?: string | null;
+}
 
-function SettingsRow({ label, description, right }: Row) {
+function SectionLabel({ label }: { label: string }) {
   return (
-    <div className="flex items-center justify-between py-3 border-b border-border last:border-0">
-      <div>
-        <p className="text-sm font-medium text-foreground">{label}</p>
-        {description && <p className="text-xs text-muted-foreground mt-0.5">{description}</p>}
-      </div>
-      <div className="ml-4 flex-shrink-0">{right}</div>
-    </div>
+    <p className="text-xs font-display uppercase tracking-[0.18em] text-muted-foreground px-1 mb-2 mt-6 first:mt-0">
+      {label}
+    </p>
   );
 }
 
-function Toggle({ checked, onChange }: { checked: boolean; onChange: () => void }) {
-  return (
-    <button
-      type="button"
-      onClick={onChange}
-      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 ${
-        checked ? 'bg-primary' : 'bg-muted-foreground/30'
-      }`}
-    >
-      <span
-        className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${
-          checked ? 'translate-x-6' : 'translate-x-1'
-        }`}
-      />
-    </button>
+function SettingsRow({
+  icon,
+  label,
+  sublabel,
+  badge,
+  href,
+  onClick,
+  last,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  sublabel?: string;
+  badge?: React.ReactNode;
+  href?: string;
+  onClick?: () => void;
+  last?: boolean;
+}) {
+  const inner = (
+    <div className={`flex items-center gap-3.5 px-4 py-4 ${!last ? 'border-b border-border/50' : ''} active:bg-muted/40 transition-colors`}>
+      <div className="w-9 h-9 rounded-xl bg-muted flex items-center justify-center text-muted-foreground flex-shrink-0">
+        {icon}
+      </div>
+      <div className="flex-1 min-w-0">
+        <p className="text-sm font-medium text-foreground">{label}</p>
+        {sublabel && <p className="text-xs text-muted-foreground mt-0.5">{sublabel}</p>}
+      </div>
+      <div className="flex items-center gap-2 flex-shrink-0">
+        {badge}
+        <ChevronRight className="w-4 h-4 text-muted-foreground/40" />
+      </div>
+    </div>
   );
+
+  if (href) return <Link href={href}>{inner}</Link>;
+  return <div onClick={onClick} className="cursor-pointer">{inner}</div>;
 }
 
 export default function SettingsPage() {
   const router = useRouter();
-  const [user, setUser] = useState<{ name?: string; email?: string } | null>(null);
-
-  // App preference toggles — persisted in localStorage
-  const [imperialUnits, setImperialUnits] = useState(false);
-  const [showNutrition, setShowNutrition] = useState(true);
+  const [user, setUser] = useState<UserProfile | null>(null);
+  const [unitLabel, setUnitLabel] = useState('Metric');
 
   useEffect(() => {
-    const stored = localStorage.getItem('user');
-    if (stored) {
-      try { setUser(JSON.parse(stored)); } catch {}
+    const token = localStorage.getItem('token');
+
+    // Load unit preference
+    const storedUnit = localStorage.getItem('units');
+    setUnitLabel(storedUnit === 'imperial' ? 'Imperial' : 'Metric');
+
+    if (!token) {
+      const stored = localStorage.getItem('user');
+      if (stored) try { setUser(JSON.parse(stored)); } catch {}
+      return;
     }
-    const units = localStorage.getItem('units');
-    if (units === 'imperial') setImperialUnits(true);
-    const nutrition = localStorage.getItem('showNutrition');
-    if (nutrition === 'false') setShowNutrition(false);
+
+    fetch('/api/user/profile', { headers: { Authorization: `Bearer ${token}` } })
+      .then(r => r.ok ? r.json() : null)
+      .then(d => { if (d) setUser(d); })
+      .catch(() => {});
+
+    fetch('/api/preferences', { headers: { Authorization: `Bearer ${token}` } })
+      .then(r => r.ok ? r.json() : null)
+      .then(d => { if (d) setUnitLabel(d.useImperial ? 'Imperial' : 'Metric'); })
+      .catch(() => {});
   }, []);
 
-  const toggleUnits = () => {
-    const next = !imperialUnits;
-    setImperialUnits(next);
-    localStorage.setItem('units', next ? 'imperial' : 'metric');
-  };
-
-  const toggleNutrition = () => {
-    const next = !showNutrition;
-    setShowNutrition(next);
-    localStorage.setItem('showNutrition', String(next));
-  };
-
   const handleLogout = () => {
-    localStorage.removeItem('user');
-    localStorage.removeItem('userId');
-    localStorage.removeItem('token');
-    localStorage.removeItem('isGuest');
+    ['user', 'userId', 'token', 'isGuest'].forEach(k => localStorage.removeItem(k));
     router.push('/auth/signin');
   };
 
-  const chevron = (
-    <svg className="w-4 h-4 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-    </svg>
-  );
+  // Derive username handle from name or email
+  const handle = user?.name
+    ? '@' + user.name.toLowerCase().replace(/\s+/g, '')
+    : user?.email
+      ? '@' + user.email.split('@')[0]
+      : '@guest';
+
+  // Avatar display: custom image or initials
+  const initials = user?.name
+    ? user.name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2)
+    : '?';
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
-      <Navbar />
-      <div className="flex flex-1 overflow-hidden">
-        <MainNavigation className="hidden md:block w-64 overflow-y-auto" />
-        <div className="flex-1 overflow-y-auto">
-          <div className="bg-card border-b border-border">
-            <div className="max-w-3xl mx-auto px-4 py-4">
-              <h2 className="text-2xl font-bold text-foreground">Settings</h2>
+    <div className="min-h-screen bg-background pb-24">
+      <div className="max-w-lg mx-auto px-4 pt-8">
+
+        {/* ── Avatar + name hero ─── */}
+        <div className="flex flex-col items-center mb-8">
+          {/* Clickable avatar */}
+          <Link href="/settings/avatar" className="relative mb-4 group">
+            <div className="w-24 h-24 rounded-full overflow-hidden border-4 border-white shadow-lg bg-brand-green/20 flex items-center justify-center">
+              {user?.avatarUrl?.startsWith('emoji:') ? (
+                <span className="text-4xl leading-none">{user.avatarUrl.replace('emoji:', '')}</span>
+              ) : user?.avatarUrl ? (
+                <img src={user.avatarUrl} alt="avatar" className="w-full h-full object-cover" />
+              ) : (
+                <span className="text-3xl font-display text-brand-green">{initials}</span>
+              )}
             </div>
-          </div>
+            {/* Edit badge */}
+            <div className="absolute -bottom-1 -right-1 w-7 h-7 rounded-full bg-accent flex items-center justify-center shadow-md border-2 border-white">
+              <Camera className="w-3.5 h-3.5 text-accent-foreground" />
+            </div>
+          </Link>
 
-          <div className="max-w-3xl mx-auto px-4 py-8 space-y-6">
-
-            {/* ── Account ─────────────────────────────────────── */}
-            <Card>
-              <h3 className="text-lg font-semibold text-foreground mb-1">Account</h3>
-              <p className="text-xs text-muted-foreground mb-4">Manage your account details and subscription</p>
-              <div className="divide-y divide-border">
-                {user ? (
-                  <>
-                    <SettingsRow label="Name" right={<span className="text-sm text-muted-foreground">{user.name || '—'}</span>} />
-                    <SettingsRow label="Email" right={<span className="text-sm text-muted-foreground">{user.email || '—'}</span>} />
-                  </>
-                ) : (
-                  <SettingsRow label="Account" right={
-                    <Link href="/auth/signin"><Button variant="outline" className="text-sm">Sign In</Button></Link>
-                  } />
-                )}
-                <SettingsRow
-                  label="Password"
-                  right={
-                    <Link href="/auth/forgot-password">
-                      <Button variant="outline" className="text-sm">Change</Button>
-                    </Link>
-                  }
-                />
-                <SettingsRow
-                  label="Subscription"
-                  description="Free plan — upgrade for unlimited meal plans"
-                  right={
-                    <span className="inline-flex items-center gap-1 px-2 py-1 bg-primary/10 text-primary rounded-full text-xs font-medium">
-                      Free
-                    </span>
-                  }
-                />
-              </div>
-            </Card>
-
-            {/* ── Profile ─────────────────────────────────────── */}
-            <Card>
-              <h3 className="text-lg font-semibold text-foreground mb-1">Profile</h3>
-              <p className="text-xs text-muted-foreground mb-4">Your body metrics and nutrition targets</p>
-              <div className="divide-y divide-border">
-                <SettingsRow
-                  label="Measurement &amp; Nutrition Settings"
-                  description="Update weight, height, age, activity level, and calorie targets"
-                  right={
-                    <Link href="/settings/preferences">
-                      <button className="flex items-center gap-1 text-sm text-primary hover:underline">
-                        Edit {chevron}
-                      </button>
-                    </Link>
-                  }
-                />
-              </div>
-            </Card>
-
-            {/* ── App Preferences ─────────────────────────────── */}
-            <Card>
-              <h3 className="text-lg font-semibold text-foreground mb-1">App Preferences</h3>
-              <p className="text-xs text-muted-foreground mb-4">Display and behaviour settings</p>
-              <div className="divide-y divide-border">
-                <SettingsRow
-                  label="Measurement Units"
-                  description={imperialUnits ? 'Imperial (lbs, ft/in)' : 'Metric (kg, cm)'}
-                  right={<Toggle checked={imperialUnits} onChange={toggleUnits} />}
-                />
-                <SettingsRow
-                  label="Show Nutrition Info"
-                  description="Display calories and macros on recipe cards"
-                  right={<Toggle checked={showNutrition} onChange={toggleNutrition} />}
-                />
-              </div>
-
-              {/* Dietary Preferences sub-section */}
-              <div className="mt-4 pt-4 border-t border-border">
-                <p className="text-sm font-semibold text-foreground mb-3">Dietary Preferences</p>
-                <div className="divide-y divide-border">
-                  <SettingsRow
-                    label="Diet Type"
-                    description="Balanced, keto, vegetarian, vegan, etc."
-                    right={
-                      <Link href="/settings/preferences">
-                        <button className="flex items-center gap-1 text-sm text-primary hover:underline">
-                          Edit {chevron}
-                        </button>
-                      </Link>
-                    }
-                  />
-                  <SettingsRow
-                    label="Dislikes"
-                    description="Ingredients you want to avoid in recipes"
-                    right={
-                      <Link href="/settings/preferences">
-                        <button className="flex items-center gap-1 text-sm text-primary hover:underline">
-                          Edit {chevron}
-                        </button>
-                      </Link>
-                    }
-                  />
-                  <SettingsRow
-                    label="Allergies"
-                    description="Ingredients that will be filtered out completely"
-                    right={
-                      <Link href="/settings/preferences">
-                        <button className="flex items-center gap-1 text-sm text-primary hover:underline">
-                          Edit {chevron}
-                        </button>
-                      </Link>
-                    }
-                  />
-                </div>
-              </div>
-            </Card>
-
-            {/* ── Support ─────────────────────────────────────── */}
-            <Card>
-              <h3 className="text-lg font-semibold text-foreground mb-1">Support</h3>
-              <p className="text-xs text-muted-foreground mb-4">Help and community</p>
-              <div className="divide-y divide-border">
-                <SettingsRow
-                  label="Invite a Friend"
-                  description="Share Feast AI with someone you know"
-                  right={
-                    <button
-                      onClick={() => {
-                        if (navigator.share) {
-                          navigator.share({
-                            title: 'Feast AI',
-                            text: 'Check out Feast AI — AI-powered meal planning!',
-                            url: window.location.origin,
-                          });
-                        } else {
-                          navigator.clipboard.writeText(window.location.origin);
-                          alert('Link copied to clipboard!');
-                        }
-                      }}
-                      className="flex items-center gap-1 text-sm text-primary hover:underline"
-                    >
-                      Share {chevron}
-                    </button>
-                  }
-                />
-                <SettingsRow
-                  label="Leave a Review"
-                  description="Help us improve by sharing your feedback"
-                  right={
-                    <a
-                      href="https://github.com/anthropics/claude-code/issues"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-1 text-sm text-primary hover:underline"
-                    >
-                      Open {chevron}
-                    </a>
-                  }
-                />
-              </div>
-            </Card>
-
-            {/* ── Session ─────────────────────────────────────── */}
-            <Card>
-              <h3 className="text-lg font-semibold text-foreground mb-2">Session</h3>
-              <p className="text-sm text-muted-foreground mb-4">Sign out of your Feast AI account.</p>
-              <Button
-                variant="outline"
-                onClick={handleLogout}
-                className="text-destructive border-destructive hover:bg-destructive hover:text-white"
-              >
-                Log Out
-              </Button>
-            </Card>
-
+          <div className="text-center">
+            <div className="flex items-center gap-2 justify-center">
+              <h1 className="text-2xl font-display text-foreground tracking-tight">
+                {user?.name || 'Guest Chef'}
+              </h1>
+              <span className="px-2 py-0.5 bg-muted rounded-pill text-[10px] font-display uppercase tracking-widest text-muted-foreground">
+                Free
+              </span>
+            </div>
+            <p className="text-sm text-muted-foreground font-body mt-0.5">{handle}</p>
           </div>
         </div>
+
+        {/* ── Account ─── */}
+        <SectionLabel label="Account" />
+        <div className="bg-card rounded-2xl border border-border overflow-hidden">
+          <SettingsRow
+            icon={<User className="w-4.5 h-4.5" />}
+            label="Account Details"
+            sublabel="Username, email, password"
+            href="/settings/account"
+          />
+          <SettingsRow
+            icon={<CreditCard className="w-4.5 h-4.5" />}
+            label="Subscription"
+            sublabel="Manage your Feast AI plan"
+            badge={
+              <span className="px-2.5 py-0.5 bg-accent/10 text-accent rounded-pill text-[10px] font-display uppercase tracking-widest">
+                Free
+              </span>
+            }
+            href="/settings/subscription"
+            last={false}
+          />
+          <SettingsRow
+            icon={<Users className="w-4.5 h-4.5" />}
+            label="Household"
+            sublabel="Share plans and grocery list"
+            href="/settings/household"
+            last
+          />
+        </div>
+
+        {/* ── App Preferences ─── */}
+        <SectionLabel label="App Preferences" />
+        <div className="bg-card rounded-2xl border border-border overflow-hidden">
+          <SettingsRow
+            icon={<Scale className="w-4.5 h-4.5" />}
+            label="Display & Units"
+            sublabel={`${unitLabel} · Nutrition info`}
+            href="/settings/units"
+          />
+          <SettingsRow
+            icon={<Smartphone className="w-4.5 h-4.5" />}
+            label="App Settings"
+            sublabel="Price, region, language"
+            href="/settings/app"
+            last
+          />
+        </div>
+
+        {/* ── Dietary Preferences ─── */}
+        <SectionLabel label="Dietary Preferences" />
+        <div className="bg-card rounded-2xl border border-border overflow-hidden">
+          <SettingsRow
+            icon={<ChefHat className="w-4.5 h-4.5" />}
+            label="Diet Type"
+            sublabel="Omnivore, Vegetarian, Keto…"
+            href="/settings/diet"
+          />
+          <SettingsRow
+            icon={<AlertTriangle className="w-4.5 h-4.5" />}
+            label="Allergies"
+            sublabel="Filter out allergens from recipes"
+            href="/settings/allergens"
+          />
+          <SettingsRow
+            icon={<ThumbsDown className="w-4.5 h-4.5" />}
+            label="Food Dislikes"
+            sublabel="Ingredients you'd rather avoid"
+            href="/settings/dislikes"
+            last
+          />
+        </div>
+
+        {/* ── Support ─── */}
+        <SectionLabel label="Support" />
+        <div className="bg-card rounded-2xl border border-border overflow-hidden">
+          <SettingsRow
+            icon={<Sparkles className="w-4.5 h-4.5" />}
+            label="What's New"
+            sublabel="Latest features and updates"
+            href="/settings/whats-new"
+          />
+          <SettingsRow
+            icon={<UserPlus className="w-4.5 h-4.5" />}
+            label="Invite Friends"
+            sublabel="Share Feast AI with friends and family"
+            href="/settings/invite"
+          />
+          <SettingsRow
+            icon={<HelpCircle className="w-4.5 h-4.5" />}
+            label="Help & FAQ"
+            sublabel="Answers to common questions"
+            href="/settings/help"
+          />
+          <SettingsRow
+            icon={<MessageSquare className="w-4.5 h-4.5" />}
+            label="Leave Feedback"
+            sublabel="Report a bug or suggest a feature"
+            href="/settings/feedback"
+            last
+          />
+        </div>
+
+        {/* ── Sign Out ─── */}
+        <div className="mt-8">
+          <button
+            onClick={handleLogout}
+            className="w-full py-4 rounded-2xl bg-accent text-accent-foreground font-display text-sm uppercase tracking-widest hover:brightness-105 active:brightness-95 transition-all shadow-md"
+          >
+            Log Out
+          </button>
+        </div>
+
       </div>
     </div>
   );

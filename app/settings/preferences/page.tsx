@@ -1,12 +1,20 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
+import { 
+  ArrowLeft, 
+  ChefHat, 
+  ShieldCheck, 
+  XOctagon, 
+  Save, 
+  CheckCircle2,
+  AlertCircle
+} from 'lucide-react';
 import { Button } from '@/components/Button';
+import { Card } from '@/components/Card';
 import { Input } from '@/components/Input';
 import { Select } from '@/components/Select';
-import { Card } from '@/components/Card';
-import { Navbar } from '@/components/Navbar';
-import { MainNavigation } from '@/components/MainNavigation';
 
 interface Preferences {
   halalEnabled: boolean;
@@ -14,12 +22,6 @@ interface Preferences {
   veganEnabled: boolean;
   allergens: string;
   dislikes: string;
-  cuisines: string;
-  equipment: string;
-  timeBudgetMins: number;
-  budgetLevel: string;
-  region: string;
-  currency: string;
   diet: string;
 }
 
@@ -29,12 +31,6 @@ const DEFAULT: Preferences = {
   veganEnabled: false,
   allergens: '',
   dislikes: '',
-  cuisines: 'Cambodian,Thai,Vietnamese',
-  equipment: 'stovetop,rice cooker',
-  timeBudgetMins: 40,
-  budgetLevel: 'medium',
-  region: 'KH',
-  currency: 'KHR',
   diet: 'balanced',
 };
 
@@ -45,7 +41,7 @@ export default function PreferencesPage() {
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState('');
 
-  const getAuthHeader = () => {
+  const getAuthHeader = (): Record<string, string> => {
     const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
     return token ? { Authorization: `Bearer ${token}` } : {};
   };
@@ -64,12 +60,6 @@ export default function PreferencesPage() {
             veganEnabled: data.veganEnabled ?? false,
             allergens: data.allergens ?? '',
             dislikes: data.dislikes ?? '',
-            cuisines: data.cuisines ?? 'Cambodian,Thai,Vietnamese',
-            equipment: data.equipment ?? 'stovetop,rice cooker',
-            timeBudgetMins: data.timeBudgetMins ?? 40,
-            budgetLevel: data.budgetLevel ?? 'medium',
-            region: data.region ?? 'KH',
-            currency: data.currency ?? 'KHR',
             diet: data.diet ?? 'balanced',
           });
         }
@@ -106,183 +96,139 @@ export default function PreferencesPage() {
     }
   };
 
-  const set = (field: keyof Preferences, value: unknown) =>
+  const set = (field: keyof Preferences, value: any) =>
     setPrefs((prev) => ({ ...prev, [field]: value }));
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background flex flex-col">
-        <Navbar />
-        <div className="flex flex-1 items-center justify-center text-muted-foreground">
-          Loading preferences...
-        </div>
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="motion-safe:animate-spin rounded-full h-8 w-8 border-4 border-accent border-t-transparent" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
-      <Navbar />
-      <div className="flex flex-1 overflow-hidden">
-        <MainNavigation className="hidden md:block w-64 overflow-y-auto" />
-        <div className="flex-1 overflow-y-auto">
-          <div className="bg-card border-b border-border">
-            <div className="max-w-3xl mx-auto px-4 py-4">
-              <h2 className="text-2xl font-bold text-foreground">Customize Preferences</h2>
-              <p className="text-sm text-muted-foreground mt-1">
-                Update your dietary preferences and cooking settings
-              </p>
-            </div>
-          </div>
+    <div className="min-h-screen bg-background pb-20">
+      <div className="max-w-2xl mx-auto px-4 sm:px-6 py-8">
+        <Link href="/settings" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-accent transition-colors mb-8 group">
+          <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
+          Back to Settings
+        </Link>
 
-          <form onSubmit={handleSave} className="max-w-3xl mx-auto px-4 py-8 space-y-6">
-            {success && (
-              <div className="p-4 bg-green-500/10 border border-green-500/30 rounded-lg text-green-600 text-sm">
-                Preferences saved successfully!
-              </div>
-            )}
-            {error && (
-              <div className="p-4 bg-destructive/10 border border-destructive/30 rounded-lg text-destructive text-sm">
-                {error}
-              </div>
-            )}
-
-            {/* Dietary Restrictions */}
-            <Card>
-              <h3 className="text-lg font-semibold text-foreground mb-4">Dietary Restrictions</h3>
-              <div className="space-y-3">
-                {[
-                  { key: 'halalEnabled' as const, label: 'Halal', description: 'No pork, no alcohol' },
-                  { key: 'vegetarianEnabled' as const, label: 'Vegetarian', description: 'No meat or fish' },
-                  { key: 'veganEnabled' as const, label: 'Vegan', description: 'No animal products' },
-                ].map(({ key, label, description }) => (
-                  <label key={key} className="flex items-center justify-between p-3 rounded-lg hover:bg-muted cursor-pointer">
-                    <div>
-                      <p className="text-sm font-medium text-foreground">{label}</p>
-                      <p className="text-xs text-muted-foreground">{description}</p>
-                    </div>
-                    <input
-                      type="checkbox"
-                      checked={prefs[key]}
-                      onChange={(e) => set(key, e.target.checked)}
-                      className="w-4 h-4 rounded border-border text-primary"
-                    />
-                  </label>
-                ))}
-              </div>
-            </Card>
-
-            {/* Allergens & Dislikes */}
-            <Card>
-              <h3 className="text-lg font-semibold text-foreground mb-4">Allergens &amp; Dislikes</h3>
-              <div className="space-y-4">
-                <Input
-                  label="Allergens to avoid"
-                  type="text"
-                  value={prefs.allergens}
-                  onChange={(e) => set('allergens', e.target.value)}
-                  placeholder="e.g. peanuts, shellfish, dairy"
-                />
-                <Input
-                  label="Foods you dislike"
-                  type="text"
-                  value={prefs.dislikes}
-                  onChange={(e) => set('dislikes', e.target.value)}
-                  placeholder="e.g. cilantro, mushrooms"
-                />
-              </div>
-            </Card>
-
-            {/* Cuisine & Cooking */}
-            <Card>
-              <h3 className="text-lg font-semibold text-foreground mb-4">Cuisine &amp; Cooking</h3>
-              <div className="space-y-4">
-                <Input
-                  label="Preferred cuisines"
-                  type="text"
-                  value={prefs.cuisines}
-                  onChange={(e) => set('cuisines', e.target.value)}
-                  placeholder="e.g. Cambodian,Thai,Vietnamese"
-                />
-                <Input
-                  label="Available equipment"
-                  type="text"
-                  value={prefs.equipment}
-                  onChange={(e) => set('equipment', e.target.value)}
-                  placeholder="e.g. stovetop,rice cooker,oven"
-                />
-                <div className="grid sm:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-foreground mb-2">
-                      Max cooking time (mins)
-                    </label>
-                    <input
-                      type="number"
-                      min={10}
-                      max={180}
-                      value={prefs.timeBudgetMins}
-                      onChange={(e) => set('timeBudgetMins', parseInt(e.target.value) || 40)}
-                      className="w-full px-3 py-2 border border-border rounded-lg bg-muted text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-                    />
-                  </div>
-                  <Select
-                    label="Budget level"
-                    value={prefs.budgetLevel}
-                    onChange={(e) => set('budgetLevel', e.target.value)}
-                    options={[
-                      { value: 'low', label: 'Low — budget-friendly' },
-                      { value: 'medium', label: 'Medium — everyday cooking' },
-                      { value: 'high', label: 'High — premium ingredients' },
-                    ]}
-                  />
-                </div>
-              </div>
-            </Card>
-
-            {/* Region & Currency */}
-            <Card>
-              <h3 className="text-lg font-semibold text-foreground mb-4">Region &amp; Currency</h3>
-              <div className="grid sm:grid-cols-2 gap-4">
-                <Select
-                  label="Region"
-                  value={prefs.region}
-                  onChange={(e) => set('region', e.target.value)}
-                  options={[
-                    { value: 'KH', label: 'Cambodia' },
-                    { value: 'TH', label: 'Thailand' },
-                    { value: 'VN', label: 'Vietnam' },
-                    { value: 'MY', label: 'Malaysia' },
-                    { value: 'SG', label: 'Singapore' },
-                    { value: 'ID', label: 'Indonesia' },
-                    { value: 'AU', label: 'Australia' },
-                    { value: 'US', label: 'United States' },
-                    { value: 'GB', label: 'United Kingdom' },
-                  ]}
-                />
-                <Select
-                  label="Currency"
-                  value={prefs.currency}
-                  onChange={(e) => set('currency', e.target.value)}
-                  options={[
-                    { value: 'KHR', label: 'KHR (៛)' },
-                    { value: 'USD', label: 'USD ($)' },
-                    { value: 'AUD', label: 'AUD ($)' },
-                    { value: 'THB', label: 'THB (฿)' },
-                    { value: 'VND', label: 'VND (₫)' },
-                    { value: 'MYR', label: 'MYR (RM)' },
-                    { value: 'SGD', label: 'SGD ($)' },
-                    { value: 'EUR', label: 'EUR (€)' },
-                    { value: 'GBP', label: 'GBP (£)' },
-                  ]}
-                />
-              </div>
-            </Card>
-
-            <Button type="submit" disabled={saving} className="w-full">
-              {saving ? 'Saving...' : 'Save Preferences'}
-            </Button>
-          </form>
+        <div className="mb-10">
+          <h1 className="text-4xl font-display text-primary tracking-tight mb-2">Dietary Strategy</h1>
+          <p className="text-sm text-muted-foreground font-body italic">
+            Configure your nutritional rails to ensure every recipe fits your lifestyle.
+          </p>
         </div>
+
+        <form onSubmit={handleSave} className="space-y-6">
+          {error && (
+            <div className="p-4 bg-destructive/10 border border-destructive/20 rounded-2xl flex items-center gap-3 text-destructive text-sm font-body italic">
+              <AlertCircle className="w-5 h-5 flex-shrink-0" /> {error}
+            </div>
+          )}
+
+          {/* ── Pillar 1: Diet Type ─────────────────────────── */}
+          <Card className="p-6 rounded-large-card overflow-hidden">
+            <h4 className="flex items-center gap-2 text-sm font-display text-foreground uppercase tracking-widest mb-6 border-b border-border/50 pb-4">
+              <ChefHat className="w-4 h-4 text-accent" /> 01. Diet Type
+            </h4>
+            <div className="grid grid-cols-2 gap-3 mb-6">
+              {[
+                { id: 'balanced', label: 'Balanced', icon: '🥗' },
+                { id: 'keto', label: 'Keto', icon: '🥩' },
+                { id: 'vegetarian', label: 'Veggie', icon: '🥕' },
+                { id: 'vegan', label: 'Vegan', icon: '🌱' },
+                { id: 'pescatarian', label: 'Pesc', icon: '🐟' },
+                { id: 'paleo', label: 'Paleo', icon: '🦴' },
+              ].map((d) => (
+                <button
+                  key={d.id}
+                  type="button"
+                  onClick={() => set('diet', d.id)}
+                  className={`flex items-center gap-3 p-3 rounded-2xl border transition-all ${
+                    prefs.diet === d.id 
+                      ? 'bg-accent/10 border-accent text-accent shadow-sm' 
+                      : 'bg-muted border-transparent text-muted-foreground hover:border-accent/20'
+                  }`}
+                >
+                  <span className="text-xl">{d.icon}</span>
+                  <span className="text-xs font-display uppercase tracking-widest">{d.label}</span>
+                </button>
+              ))}
+            </div>
+            <p className="text-[10px] text-muted-foreground font-body italic leading-relaxed px-1">
+              Selecting a diet type prioritises recipes that naturally fit these macros and ingredients.
+            </p>
+          </Card>
+
+          {/* ── Pillar 2: Health & Religion ──────────────────── */}
+          <Card className="p-6 rounded-large-card overflow-hidden">
+            <h4 className="flex items-center gap-2 text-sm font-display text-foreground uppercase tracking-widest mb-6 border-b border-border/50 pb-4">
+              <ShieldCheck className="w-4 h-4 text-accent" /> 02. Restrictions
+            </h4>
+            <div className="space-y-3">
+              {[
+                { key: 'halalEnabled' as const, label: 'Halal Certified', desc: 'Strictly no pork or non-halal alcohol products.' },
+                { key: 'vegetarianEnabled' as const, label: 'Strict Vegetarian', desc: 'Removes all meat, poultry, and seafood.' },
+                { key: 'veganEnabled' as const, label: 'Strict Vegan', desc: 'Removes all animal-derived ingredients.' },
+              ].map(({ key, label, desc }) => (
+                <label key={key} className="flex items-center justify-between p-4 rounded-2xl bg-muted/50 border border-transparent hover:border-accent/10 cursor-pointer transition-all">
+                  <div className="flex-1 pr-4">
+                    <p className="text-sm font-display text-foreground uppercase tracking-wider">{label}</p>
+                    <p className="text-[10px] text-muted-foreground font-body italic">{desc}</p>
+                  </div>
+                  <input
+                    type="checkbox"
+                    checked={prefs[key]}
+                    onChange={(e) => set(key, e.target.checked)}
+                    className="w-5 h-5 rounded-lg border-muted-foreground/30 text-accent focus:ring-accent transition-all cursor-pointer"
+                  />
+                </label>
+              ))}
+            </div>
+          </Card>
+
+          {/* ── Pillar 3: Ingredient Exclusions ──────────────── */}
+          <Card className="p-6 rounded-large-card overflow-hidden">
+            <h4 className="flex items-center gap-2 text-sm font-display text-foreground uppercase tracking-widest mb-6 border-b border-border/50 pb-4">
+              <XOctagon className="w-4 h-4 text-accent" /> 03. Exclusions
+            </h4>
+            <div className="space-y-6">
+              <Input
+                label="Allergens (Filter absolute)"
+                placeholder="e.g. peanuts, shellfish, egg"
+                value={prefs.allergens}
+                onChange={(e) => set('allergens', e.target.value)}
+              />
+              <Input
+                label="Specific Dislikes (Downrank)"
+                placeholder="e.g. cilantro, olives, liver"
+                value={prefs.dislikes}
+                onChange={(e) => set('dislikes', e.target.value)}
+              />
+            </div>
+          </Card>
+
+          <Button
+            type="submit"
+            disabled={saving}
+            className="w-full rounded-pill py-6 font-display uppercase tracking-widest shadow-xl shadow-accent/20 overflow-hidden"
+          >
+            {saving ? (
+              'SavingStrategy...'
+            ) : success ? (
+              <span className="flex items-center justify-center gap-2">
+                <CheckCircle2 className="w-5 h-5" /> Saved Successfully
+              </span>
+            ) : (
+              <span className="flex items-center justify-center gap-2">
+                <Save className="w-4 h-4" /> Save Dietary Profile
+              </span>
+            )}
+          </Button>
+        </form>
       </div>
     </div>
   );

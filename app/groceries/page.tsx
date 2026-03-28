@@ -3,11 +3,10 @@
 import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { Navbar } from '@/components/Navbar';
-import { MainNavigation } from '@/components/MainNavigation';
 import { Button } from '@/components/Button';
 import { Card } from '@/components/Card';
 import { Input } from '@/components/Input';
+import { IngredientDetailModal } from '@/components/IngredientDetailModal';
 import { Select } from '@/components/Select';
 import { AggregatedIngredient, GroceryCategory, groupByCategory, toCsv } from '@/lib/groceries';
 
@@ -65,6 +64,7 @@ function GroceriesPageInner() {
   const [editingItemId, setEditingItemId] = useState<string | null>(null);
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
+  const [selectedIngredient, setSelectedIngredient] = useState<string | null>(null);
 
   useEffect(() => {
     fetchPlans();
@@ -287,25 +287,21 @@ function GroceriesPageInner() {
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      <Navbar />
-
       <div className="flex flex-1 overflow-hidden">
-        {/* Sidebar Navigation */}
-        <MainNavigation className="hidden md:block w-64 overflow-y-auto" />
 
         {/* Main Content */}
         <div className="flex-1 flex flex-col overflow-hidden">
           <div className="flex-1 overflow-y-auto p-8">
             <div className="max-w-4xl mx-auto w-full">
-              <h2 className="text-2xl font-bold text-foreground mb-8">Shopping List</h2>
+              <h2 className="text-3xl font-display text-foreground mb-8">Shopping List</h2>
         {/* Error State */}
         {error && !loadingPlans && (
           <Card className="mb-8 bg-red-50 dark:bg-red-950 border-red-500/30">
             <div className="flex items-start gap-4">
               <span className="text-2xl">⚠️</span>
               <div>
-                <h3 className="font-semibold text-red-900 dark:text-red-100">Error Loading Groceries</h3>
-                <p className="text-sm text-red-800 dark:text-red-200 mt-1">{error}</p>
+                <h3 className="font-display text-red-900 dark:text-red-100 uppercase tracking-widest text-xs">Error Loading Groceries</h3>
+                <p className="text-sm text-red-800 dark:text-red-200 mt-1 font-body font-bold">{error}</p>
                 <Button
                   variant="outline"
                   onClick={fetchPlans}
@@ -322,12 +318,12 @@ function GroceriesPageInner() {
         <Card className="mb-8">
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-foreground mb-2">
+              <label className="block text-[10px] font-display uppercase tracking-widest text-muted-foreground mb-2">
                 Select Meal Plan
               </label>
               {loadingPlans ? (
-                <div className="p-3 bg-muted rounded text-muted-foreground text-sm">
-                  Loading plans...
+                <div className="p-3 bg-muted rounded-xl text-muted-foreground text-sm font-body italic">
+                  Loading plans…
                 </div>
               ) : plans.length === 0 ? (
                 <div className="p-4 bg-amber-50 dark:bg-amber-950 border border-amber-200 dark:border-amber-800 rounded-lg">
@@ -366,7 +362,7 @@ function GroceriesPageInner() {
 
         {/* Add/Edit Custom Item Section */}
         <Card className="mb-8">
-          <h3 className="text-lg font-semibold text-foreground mb-4">
+          <h3 className="text-xl font-display text-foreground mb-4 uppercase tracking-widest">
             {editingItemId ? 'Edit Item' : 'Add Custom Items'}
           </h3>
           <form onSubmit={editingItemId ? (e) => { e.preventDefault(); saveEditedItem(); } : addCustomItem} className="space-y-4">
@@ -520,8 +516,8 @@ function GroceriesPageInner() {
           <Card>
             <div className="flex items-center justify-center py-12">
               <div className="text-center">
-                <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary mb-4"></div>
-                <p className="text-muted-foreground">Loading ingredients...</p>
+                <div className="inline-block motion-safe:animate-spin rounded-full h-8 w-8 border-b-2 border-primary mb-4"></div>
+                <p className="text-muted-foreground font-display uppercase tracking-widest text-xs">Loading ingredients…</p>
               </div>
             </div>
           </Card>
@@ -531,8 +527,8 @@ function GroceriesPageInner() {
         {!loading && ingredients.length === 0 && selectedPlanId && !error && (
           <Card>
             <div className="text-center py-12">
-              <div className="text-6xl mb-4">📭</div>
-              <h3 className="text-lg font-semibold text-foreground mb-2">No Recipes Yet</h3>
+              <div className="text-6xl mb-4 motion-safe:animate-bounce">📭</div>
+              <h3 className="text-2xl font-display text-foreground mb-2">No Recipes Yet</h3>
               <p className="text-muted-foreground mb-6">
                 This meal plan has no recipes. Add some recipes to see your shopping list.
               </p>
@@ -564,10 +560,10 @@ function GroceriesPageInner() {
 
               return (
                 <div key={category}>
-                  <h3 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
-                    <span>{CATEGORY_EMOJI[category as GroceryCategory]}</span>
+                  <h3 className="text-xl font-display text-foreground mb-4 flex items-center gap-2">
+                    <span className="text-2xl">{CATEGORY_EMOJI[category as GroceryCategory]}</span>
                     <span>{category}</span>
-                    <span className="text-sm font-normal text-muted-foreground">({items.length})</span>
+                    <span className="text-xs font-body font-bold text-muted-foreground uppercase tracking-widest">({items.length})</span>
                   </h3>
                   <Card>
                     <div className="space-y-2">
@@ -591,7 +587,7 @@ function GroceriesPageInner() {
                             <div className="flex-1 min-w-0">
                               <div className="flex items-baseline gap-2">
                                 <p
-                                  className={`font-medium ${
+                                  className={`font-display text-lg ${
                                     isChecked ? 'line-through text-muted-foreground' : 'text-foreground'
                                   }`}
                                 >
@@ -600,6 +596,15 @@ function GroceriesPageInner() {
                                 <span className="text-sm text-muted-foreground whitespace-nowrap">
                                   {ingredient.totalQty} {ingredient.unit}
                                 </span>
+                                <button
+                                  type="button"
+                                  onClick={() => setSelectedIngredient(ingredient.name)}
+                                  className="ml-auto flex-shrink-0 text-muted-foreground hover:text-foreground text-xl leading-none px-2 py-1 rounded-pill hover:bg-muted transition-colors"
+                                  aria-label={`More info about ${ingredient.name}`}
+                                  title={`Info about ${ingredient.name}`}
+                                >
+                                  …
+                                </button>
                               </div>
 
                               {ingredient.items.length > 1 && (
@@ -752,6 +757,11 @@ function GroceriesPageInner() {
           </div>
         </div>
       </div>
+
+      <IngredientDetailModal
+        ingredient={selectedIngredient}
+        onClose={() => setSelectedIngredient(null)}
+      />
     </div>
   );
 }

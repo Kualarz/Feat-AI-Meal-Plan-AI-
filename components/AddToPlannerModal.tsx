@@ -72,9 +72,15 @@ export function AddToPlannerModal({
 
       const dayISO = targetDate.toISOString().split('T')[0];
 
+      const token = localStorage.getItem('token');
+      if (!token) {
+        setError('You must be signed in to add to your planner.');
+        return;
+      }
+
       const response = await fetch('/api/plans/addMeal', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify({
           recipeId,
           dayISO,

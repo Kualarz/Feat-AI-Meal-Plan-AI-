@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
+
+export const dynamic = 'force-dynamic';
 import { db } from '@/lib/db';
 import { getNutritionSummary } from '@/lib/nutrition';
 import { requireAuth, createUnauthorizedResponse } from '@/lib/auth-middleware';
@@ -27,6 +29,7 @@ const DEFAULT_PREFERENCES = {
   height: 170,
   age: 30,
   activityLevel: 'moderate',
+  useImperial: false,
 };
 
 export async function GET(request: NextRequest) {
@@ -119,6 +122,7 @@ export async function POST(request: NextRequest) {
         height: body.height || 170,
         age: body.age || 30,
         activityLevel: body.activityLevel || 'moderate',
+        useImperial: body.useImperial !== undefined ? body.useImperial : false,
       },
     });
 

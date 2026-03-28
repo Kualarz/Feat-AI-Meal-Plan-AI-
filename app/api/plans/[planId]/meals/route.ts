@@ -22,28 +22,35 @@ export async function POST(
       return NextResponse.json({ error: 'recipeId, dateISO, slot are required' }, { status: 400 });
     }
 
-    const validSlots = ['breakfast', 'lunch', 'dinner', 'dessert'];
+    const validSlots = ['breakfast', 'lunch', 'dinner', 'dessert', 'any'];
     if (!validSlots.includes(slot)) {
       return NextResponse.json({ error: 'Invalid slot' }, { status: 400 });
     }
 
-    // Upsert: replace existing meal in the same slot/date
-    const existing = await db.planMeal.findFirst({
-      where: { planId: params.planId, dateISO, slot },
-    });
-
     let meal;
-    if (existing) {
-      meal = await db.planMeal.update({
-        where: { id: existing.id },
-        data: { recipeId },
-        include: { recipe: true },
-      });
-    } else {
+    if (slot === 'any') {
+      // Free-form: always create — multiple recipes per day are allowed
       meal = await db.planMeal.create({
         data: { planId: params.planId, recipeId, dateISO, slot },
         include: { recipe: true },
       });
+    } else {
+      // Fixed slot: upsert — replace existing meal in that slot/date
+      const existing = await db.planMeal.findFirst({
+        where: { planId: params.planId, dateISO, slot },
+      });
+      if (existing) {
+        meal = await db.planMeal.update({
+          where: { id: existing.id },
+          data: { recipeId },
+          include: { recipe: true },
+        });
+      } else {
+        meal = await db.planMeal.create({
+          data: { planId: params.planId, recipeId, dateISO, slot },
+          include: { recipe: true },
+        });
+      }
     }
 
     return NextResponse.json({ meal }, { status: 201 });

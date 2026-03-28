@@ -85,7 +85,7 @@ export default function SetupAllergensPage() {
                 value={allergenInput}
                 onChange={e => setAllergenInput(e.target.value)}
                 onKeyDown={e => e.key === 'Enter' && addCustom()}
-                placeholder="Add custom allergen…"
+                placeholder="Add custom allergen..."
                 className="flex-1 px-3 py-2 border border-border bg-background text-foreground rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-destructive"
               />
               <button type="button" onClick={addCustom} className="px-4 py-2 bg-destructive text-white rounded-lg text-sm hover:bg-destructive/90 transition">Add</button>

@@ -15,12 +15,25 @@ model User {
   email     String       @unique
   password    String?
   name      String?
+  avatarUrl String?
   createdAt DateTime     @default(now())
   preferences Preference[]
   plans     Plan[]
   savedRecipes        SavedRecipe[]
   collections         Collection[]
+  likes               Like[]
   passwordResetTokens PasswordResetToken[]
+}
+
+model Like {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  recipeId  String
+  recipe    Recipe   @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([userId, recipeId])
 }
 
 model Collection {
@@ -38,6 +51,7 @@ model SavedRecipe {
   userId       String
   user         User        @relation(fields: [userId], references: [id], onDelete: Cascade)
   recipeId     String
+  recipe       Recipe      @relation(fields: [recipeId], references: [id], onDelete: Cascade)
   collectionId String?
   collection   Collection? @relation(fields: [collectionId], references: [id], onDelete: SetNull)
   createdAt    DateTime    @default(now())
@@ -80,6 +94,7 @@ model Preference {
   equipment           String?  // CSV
   region              String?  // e.g. KH, AU
   currency            String?  // e.g. KHR, AUD
+  useImperial         Boolean  @default(false)
   showCalories        Boolean  @default(true)
   updatedAt           DateTime @updatedAt
 }
@@ -107,9 +122,13 @@ model Recipe {
   imageUrl        String?
   sourceUrl       String?
   cookwareJson    String?    // JSON string of string[] e.g. ["Wok","Cutting board"]
+  imagePrompt      String?
   tags            String?    // CSV
+  rating          Float?     @default(0)
   createdAt       DateTime   @default(now())
   planMeals       PlanMeal[]
+  likes           Like[]
+  savedBy         SavedRecipe[]
 }
 
 model Plan {
@@ -126,9 +145,18 @@ model PlanMeal {
   id       String  @id @default(cuid())
   planId   String
   plan     Plan    @relation(fields: [planId], references: [id], onDelete: Cascade)
-  dateISO  String
-  slot     String  // breakfast, lunch, dinner, dessert
+  dateISO  String? // null when slot = "queue"
+  slot     String  // breakfast, lunch, dinner, dessert, queue
   recipeId String?
   recipe   Recipe? @relation(fields: [recipeId], references: [id])
   notes    String?
+}
+
+model CuratedCollection {
+  id          String   @id @default(cuid())
+  title       String
+  emoji       String
+  tagline     String
+  recipeIds   String   // JSON array of recipe IDs e.g. '["id1","id2"]'
+  generatedAt DateTime @default(now())
 }

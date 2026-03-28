@@ -46,7 +46,7 @@ export const ErrorMessages = {
   GROCERY_PLAN_REQUIRED: 'planId parameter is required',
 
   // AI errors
-  AI_NO_API_KEY: 'AI service not configured. Please set ANTHROPIC_API_KEY environment variable',
+  AI_NO_API_KEY: 'AI service not configured. Please set GEMINI_API_KEY environment variable',
   AI_API_ERROR: 'AI service error. Please try again later',
   AI_RATE_LIMITED: 'Too many requests to AI service. Please wait a moment and try again',
   AI_INVALID_RESPONSE: 'AI service returned invalid response',
@@ -105,7 +105,7 @@ export function handleAPIError(error: unknown, defaultMessage: string = ErrorMes
     }
 
     // AI service errors
-    if (message.includes('API key') || message.includes('ANTHROPIC')) {
+    if (message.includes('API key') || message.includes('GEMINI')) {
       return {
         statusCode: 500,
         response: createErrorResponse(500, ErrorMessages.AI_NO_API_KEY),

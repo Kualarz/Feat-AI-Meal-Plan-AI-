@@ -8,64 +8,71 @@ export async function POST(
   { params }: { params: { id: string } }
 ) {
   try {
-    const user = requireAuth(request);
+    const user = await requireAuth(request);
     if (!user) return createUnauthorizedResponse();
 
-    const recipe = await db.recipe.findUnique({ where: { id: params.id } });
+    const recipeId = params.id;
+
+    // Check if recipe exists
+    const recipe = await db.recipe.findUnique({
+      where: { id: recipeId },
+    });
+
     if (!recipe) {
       return NextResponse.json({ error: 'Recipe not found' }, { status: 404 });
     }
 
-    const saved = await db.savedRecipe.upsert({
-      where: { userId_recipeId: { userId: user.userId, recipeId: params.id } },
-      create: { userId: user.userId, recipeId: params.id },
-      update: {},
+    // Toggle saved status
+    const existing = await db.savedRecipe.findUnique({
+      where: {
+        userId_recipeId: {
+          userId: user.userId,
+          recipeId: recipeId,
+        },
+      },
     });
 
-    return NextResponse.json(saved, { status: 201 });
+    if (existing) {
+      await db.savedRecipe.delete({
+        where: { id: existing.id },
+      });
+      return NextResponse.json({ saved: false, message: 'Removed from library' });
+    } else {
+      await db.savedRecipe.create({
+        data: {
+          userId: user.userId,
+          recipeId: recipeId,
+        },
+      });
+      return NextResponse.json({ saved: true, message: 'Saved to library' });
+    }
   } catch (error) {
-    const { statusCode, response } = handleAPIError(error, 'Failed to save recipe');
+    const { statusCode, response } = handleAPIError(error, 'Failed to toggle save status');
     return NextResponse.json(response, { status: statusCode });
   }
 }
 
-export async function PATCH(
+export async function GET(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
-    const user = requireAuth(request);
-    if (!user) return createUnauthorizedResponse();
+    const user = await requireAuth(request);
+    if (!user) {
+      return NextResponse.json({ saved: false });
+    }
 
-    const { collectionId } = await request.json();
-
-    const updated = await db.savedRecipe.updateMany({
-      where: { userId: user.userId, recipeId: params.id },
-      data: { collectionId: collectionId ?? null } as any,
+    const saved = await db.savedRecipe.findUnique({
+      where: {
+        userId_recipeId: {
+          userId: user.userId,
+          recipeId: params.id,
+        },
+      },
     });
 
-    return NextResponse.json({ success: true, updated });
+    return NextResponse.json({ saved: !!saved });
   } catch (error) {
-    const { statusCode, response } = handleAPIError(error, 'Failed to update collection');
-    return NextResponse.json(response, { status: statusCode });
-  }
-}
-
-export async function DELETE(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
-  try {
-    const user = requireAuth(request);
-    if (!user) return createUnauthorizedResponse();
-
-    await db.savedRecipe.deleteMany({
-      where: { userId: user.userId, recipeId: params.id },
-    });
-
-    return NextResponse.json({ success: true });
-  } catch (error) {
-    const { statusCode, response } = handleAPIError(error, 'Failed to unsave recipe');
-    return NextResponse.json(response, { status: statusCode });
+    return NextResponse.json({ saved: false });
   }
 }
